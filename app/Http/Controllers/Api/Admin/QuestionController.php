@@ -1,0 +1,142 @@
+<?php
+
+namespace App\Http\Controllers\Api\Admin;
+
+use App\Models\Question;
+use App\Models\Theme;
+use App\Support\Lang;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+
+class QuestionController extends ApiController
+{
+    public function index(Request $request)
+    {
+        $this->can('access_question');
+
+        return Question::withCount('answers')
+            ->with(['themes' => fn ($q) => $q->select('themes.id', 'icon_type', 'icon')->titled()])
+            ->select('id', 'type', 'question_krill', 'question_latin', 'image')
+            ->when($request->search, fn ($q, $s) => $q->where(fn ($q) => $q->where('question_krill', 'like', "%{$s}%")->orWhere('question_latin', 'like', "%{$s}%")))
+            ->when($request->theme, fn ($q, $t) => $q->whereHas('themes', fn ($q) => $q->where('themes.id', $t)))
+            ->when($request->filled('type'), fn ($q) => $q->where('type', $request->type))
+            ->latest('id')
+            ->paginate(15);
+    }
+
+    public function themes()
+    {
+        return Theme::select('id')->titled()->orderBy('title')->get();
+    }
+
+    public function languages()
+    {
+        return Lang::all();
+    }
+
+    public function store(Request $request)
+    {
+        $this->can('create_question');
+
+        return $this->save($request, new Question);
+    }
+
+    public function show(Question $question)
+    {
+        $this->can('show_question');
+        $question->load(['themes' => fn ($q) => $q->select('themes.id', 'icon_type', 'icon')->titled(), 'answers' => fn ($q) => $q->select('id', 'question_id', 'text_krill', 'text_latin', 'is_correct', 'order')]);
+
+        return $question;
+    }
+
+    public function edit(Question $question)
+    {
+        $this->can('update_question');
+        $question->load(['themes' => fn ($q) => $q->select('themes.id', 'icon_type', 'icon')->titled(), 'answers' => fn ($q) => $q->select('id', 'question_id', 'text_krill', 'text_latin', 'is_correct', 'order')]);
+
+        return $question;
+    }
+
+    public function update(Request $request, Question $question)
+    {
+        $this->can('update_question');
+
+        return $this->save($request, $question);
+    }
+
+    public function destroy(Question $question)
+    {
+        $this->can('delete_question');
+        if ($question->image) {
+            Storage::disk('public')->delete($question->image);
+        }
+        $question->delete();
+
+        return $this->ok('O‘chirildi.');
+    }
+
+    private function save(Request $request, Question $question)
+    {
+        $default = Lang::default();
+        $other = $default === 'krill' ? 'latin' : 'krill';
+        $data = $request->validate([
+            'type' => ['required', 'in:0,1'],
+            "question_{$default}" => ['required', 'string'],
+            "question_{$other}" => ['nullable', 'string'],
+            'instruction_krill' => ['nullable', 'string'],
+            'instruction_latin' => ['nullable', 'string'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,gif,webp,bmp,svg', 'max:4096'],
+            'remove_image' => ['nullable', 'boolean'],
+            'themes' => ['required', 'array', 'min:1'],
+            'themes.*' => ['integer', 'exists:themes,id'],
+            'answers' => ['required', 'array', 'min:2', 'max:10'],
+            "answers.*.text_{$default}" => ['required', 'string'],
+            "answers.*.text_{$other}" => ['nullable', 'string'],
+            'answers.*.is_correct' => ['required', 'boolean'],
+        ], [
+            'themes.required' => 'Kamida bitta mavzu tanlang.',
+            'answers.min' => 'Kamida 2 ta javob bo‘lishi kerak.',
+            "answers.*.text_{$default}.required" => 'Javob matni bo‘sh bo‘lmasin.',
+            "question_{$default}.required" => 'Savol matni bo‘sh bo‘lmasin.',
+            'image.mimes' => 'Rasm formati qo‘llab-quvvatlanmaydi (jpg, png, gif, webp, bmp, svg).',
+        ]);
+
+        $hasImage = $request->hasFile('image') || ($question->image && ! $request->boolean('remove_image'));
+        abort_if((int) $data['type'] === Question::TYPE_IMAGE && ! $hasImage, 422, 'Rasmli savol uchun rasm majburiy.');
+        abort_if(! collect($data['answers'])->contains(fn ($a) => filter_var($a['is_correct'], FILTER_VALIDATE_BOOL)), 422, 'To‘g‘ri javobni belgilang.');
+
+        DB::transaction(function () use ($request, $question, $data) {
+            $old = $question->image;
+            $image = $old;
+            if ((int) $data['type'] === Question::TYPE_TEXT || $request->boolean('remove_image')) {
+                $image = null;
+            }
+            if ($request->hasFile('image') && (int) $data['type'] === Question::TYPE_IMAGE) {
+                $image = $request->file('image')->store('images', 'public');
+            }
+            if ($old && $old !== $image) {
+                Storage::disk('public')->delete($old);
+            }
+
+            $question->fill([
+                'type' => $data['type'],
+                'question_krill' => ($data['question_krill'] ?? null) ?: null,
+                'question_latin' => ($data['question_latin'] ?? null) ?: null,
+                'instruction_krill' => ($data['instruction_krill'] ?? null) ?: null,
+                'instruction_latin' => ($data['instruction_latin'] ?? null) ?: null,
+                'image' => $image,
+            ])->save();
+            $question->themes()->sync($data['themes']);
+            $question->answers()->delete();
+            $question->answers()->createMany(collect($data['answers'])->values()->map(fn ($a, $i) => [
+                'text_krill' => ($a['text_krill'] ?? null) ?: null,
+                'text_latin' => ($a['text_latin'] ?? null) ?: null,
+                'is_correct' => (int) filter_var($a['is_correct'], FILTER_VALIDATE_BOOL),
+                'order' => $i + 1,
+            ])->all());
+        });
+
+        return $this->ok('Saqlandi.', ['id' => $question->id]);
+    }
+}
