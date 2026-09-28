@@ -29,6 +29,7 @@ Route::prefix('admin')->group(function () {
         Route::apiResource('teachers', TeacherController::class);
         Route::apiResource('students', StudentController::class);
 
+        Route::get('groups/search', [GroupController::class, 'search']);
         Route::get('groups/{group}/students', [GroupController::class, 'students']);
         Route::post('groups/{group}/students', [GroupController::class, 'addStudents']);
         Route::delete('groups/{group}/students/{user}', [GroupController::class, 'removeStudent']);
@@ -66,7 +67,7 @@ Route::prefix('admin')->group(function () {
     });
 });
 
-Route::prefix('user')->middleware(['auth:sanctum', 'user'])->group(function () {
+Route::prefix('user')->middleware(['auth:sanctum', 'single.session', 'user'])->group(function () {
     Route::get('me', [QuizController::class, 'me']);
     Route::get('languages', [QuizController::class, 'languages']);
     Route::get('themes', [QuizController::class, 'themes']);

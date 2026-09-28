@@ -58,11 +58,12 @@ export const SaveButton = ({ saving, children = 'Saqlash', icon: Icon = Save, cl
 
 export const BackLink = ({ to, children = 'Orqaga' }) => <Link to={to} className="btn-secondary"><ArrowLeft className="w-4 h-4" /> {children}</Link>;
 
-export const Actions = ({ show, edit, onDelete, extra }) => (
+export const Actions = ({ show, edit, onEdit, onDelete, extra }) => (
     <div className="flex items-center justify-end gap-1">
         {show && <Link to={show} className="icon-btn text-gray-400 hover:text-gray-700 hover:bg-gray-100"><Eye className="w-4 h-4" /></Link>}
         {extra}
         {edit && <Link to={edit} className="icon-btn text-blue-500 hover:text-blue-700 hover:bg-blue-50"><SquarePen className="w-4 h-4" /></Link>}
+        {onEdit && <button type="button" onClick={onEdit} className="icon-btn text-blue-500 hover:text-blue-700 hover:bg-blue-50"><SquarePen className="w-4 h-4" /></button>}
         {onDelete && <button type="button" onClick={onDelete} className="icon-btn text-red-500 hover:text-red-700 hover:bg-red-50"><Trash2 className="w-4 h-4" /></button>}
     </div>
 );

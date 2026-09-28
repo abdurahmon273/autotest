@@ -39,7 +39,7 @@ class StaffRequest extends FormRequest
             'username' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_]+$/', Rule::unique('users', 'username')->ignore($staff)],
             'chat_id' => ['nullable', 'digits_between:5,20', Rule::unique('users', 'chat_id')->ignore($staff)],
             'max_attempts' => ['nullable', 'integer', 'min:1', 'max:100'],
-            'password' => [$staff ? 'nullable' : 'required', 'string', 'min:6', 'confirmed'],
+            'password' => [$staff ? 'nullable' : 'required', 'string', 'min:4', 'max:12', 'confirmed'],
             'roles' => ['required', 'array', 'min:1'],
             'roles.*' => ['integer', Rule::exists('roles', 'id')->whereNotIn('id', Role::NON_STAFF)],
         ];

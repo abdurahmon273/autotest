@@ -13,7 +13,7 @@ class AuthController extends ApiController
 {
     public function login(Request $request)
     {
-        $data = $request->validate(['email' => ['required', 'email'], 'password' => ['required', 'string', 'min:6']]);
+        $data = $request->validate(['email' => ['required', 'email'], 'password' => ['required', 'string', 'min:4', 'max:12'], 'remember' => ['nullable', 'boolean']]);
 
         $user = User::where('email', $data['email'])->whereHas('roles', fn ($q) => $q->where('roles.id', Role::ADMIN))->first();
 
@@ -21,7 +21,7 @@ class AuthController extends ApiController
             throw ValidationException::withMessages(['email' => 'Email yoki parol noto‘g‘ri.']);
         }
 
-        Auth::login($user, true);
+        Auth::login($user, (bool) ($data['remember'] ?? false));
         $request->session()->regenerate();
 
         return $this->me($request);

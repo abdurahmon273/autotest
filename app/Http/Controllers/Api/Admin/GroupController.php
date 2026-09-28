@@ -22,6 +22,13 @@ class GroupController extends ApiController
             ->paginate(15);
     }
 
+    public function search(Request $request)
+    {
+        return Group::select('id', 'name')
+            ->when($request->search, fn ($q, $s) => $q->where('name', 'like', "%{$s}%"))
+            ->latest('id')->limit(10)->get();
+    }
+
     public function store(GroupRequest $request)
     {
         $this->can('create_group');

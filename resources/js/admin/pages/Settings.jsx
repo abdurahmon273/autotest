@@ -27,14 +27,14 @@ export function TelegramSettings() {
     );
 }
 
-export function Tests() {
-    return (
-        <>
-            <PageHeader title="Testlar" />
-            <div className="card p-12 text-center text-sm text-gray-400"><FileQuestion className="w-8 h-8 mx-auto mb-2 text-gray-300" />Hozircha bo‘sh</div>
-        </>
-    );
-}
+export const Placeholder = ({ title }) => (
+    <>
+        <PageHeader title={title} />
+        <div className="card p-12 text-center text-sm text-gray-400"><FileQuestion className="w-8 h-8 mx-auto mb-2 text-gray-300" />Hozircha bo‘sh</div>
+    </>
+);
+
+export const Tests = () => <Placeholder title="Testlar" />;
 
 function LanguageModal({ item, onClose, onSaved }) {
     const [f, setF] = useState({ title: item?.title ?? '', code: item?.code ?? '' });

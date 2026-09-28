@@ -24,6 +24,7 @@ class User extends Authenticatable
         'username',
         'chat_id',
         'max_attempts',
+        'session_id',
         'password',
     ];
 
@@ -32,6 +33,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'session_id',
     ];
 
     protected function casts(): array

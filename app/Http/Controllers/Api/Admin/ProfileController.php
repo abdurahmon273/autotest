@@ -38,7 +38,7 @@ class ProfileController extends ApiController
         $this->can('update_profile');
         $data = $request->validate([
             'old_password' => ['required', 'current_password'],
-            'password' => ['required', 'string', 'min:6', 'confirmed', 'different:old_password'],
+            'password' => ['required', 'string', 'min:4', 'max:12', 'confirmed', 'different:old_password'],
         ], [
             'old_password.current_password' => 'Joriy parol noto‘g‘ri.',
             'password.different' => 'Yangi parol eskisidan farq qilishi kerak.',

@@ -9,7 +9,7 @@ import { LightboxProvider } from './lib/lightbox';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import { PeopleIndex, PersonForm, PersonShow } from './pages/People';
+import { PeopleIndex, PersonShow } from './pages/People';
 import { StaffForm, StaffIndex, StaffShow } from './pages/Staff';
 import { GroupForm, GroupShow, GroupsIndex } from './pages/Groups';
 import { RoleForm, RoleShow, RolesIndex } from './pages/Roles';
@@ -17,7 +17,7 @@ import { PermissionForm, PermissionShow, PermissionsIndex } from './pages/Permis
 import { ThemeForm, ThemesIndex } from './pages/Themes';
 import { QuestionForm, QuestionShow, QuestionsIndex } from './pages/Questions';
 import Profile from './pages/Profile';
-import { GeneralSettings, TelegramSettings, Tests } from './pages/Settings';
+import { GeneralSettings, Placeholder, TelegramSettings, Tests } from './pages/Settings';
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false, staleTime: 30_000 } } });
 
@@ -33,9 +33,7 @@ const crud = (path, Index, Form, Show) => (
 const people = kind => (
     <Route path={kind}>
         <Route index element={<PeopleIndex kind={kind} />} />
-        <Route path="create" element={<PersonForm kind={kind} />} />
         <Route path=":id" element={<PersonShow kind={kind} />} />
-        <Route path=":id/edit" element={<PersonForm kind={kind} />} />
     </Route>
 );
 
@@ -59,6 +57,11 @@ createRoot(document.getElementById('app')).render(
                                         {crud('themes', ThemesIndex, ThemeForm)}
                                         {crud('questions', QuestionsIndex, QuestionForm, QuestionShow)}
                                         <Route path="tests" element={<Tests />} />
+                                        <Route path="homeworks" element={<Placeholder title="Uyga vazifalar" />} />
+                                        <Route path="active-users" element={<Placeholder title="Faol foydalanuvchilar" />} />
+                                        <Route path="results/students" element={<Placeholder title="O‘quvchi natijalari" />} />
+                                        <Route path="results/themes" element={<Placeholder title="Bo‘lim bo‘yicha natijalar" />} />
+                                        <Route path="results/by-student" element={<Placeholder title="O‘quvchi bo‘yicha natijalar" />} />
                                         <Route path="profile" element={<Profile />} />
                                         <Route path="settings/telegram" element={<TelegramSettings />} />
                                         <Route path="settings/general" element={<GeneralSettings />} />

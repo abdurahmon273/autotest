@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
-import { BookOpen, Cog, Briefcase, ChevronDown, CircleHelp, FileQuestion, GraduationCap, KeyRound, LayoutDashboard, Layers, LogOut, Menu, Send, Settings, ShieldCheck, User, Users } from 'lucide-react';
+import { Activity, BarChart3, BookOpen, ClipboardList, Cog, Home, UserCheck, Briefcase, ChevronDown, CircleHelp, FileQuestion, GraduationCap, KeyRound, LayoutDashboard, Layers, LogOut, Menu, Send, Settings, ShieldCheck, User, Users } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { Avatar } from './ui';
 import { cx } from '../lib/utils';
@@ -11,10 +11,15 @@ const MAIN = [
     ['access_dashboard', '/admin', LayoutDashboard, 'Dashboard', true],
     ['access_teacher', '/admin/teachers', GraduationCap, 'Ustozlar'],
     ['access_student', '/admin/students', Users, 'Studentlar'],
-    ['access_group', '/admin/groups', Layers, 'Guruhlar'],
+    ['access_student', '/admin/results/students', UserCheck, 'O‘quvchi natijalari'],
+    ['access_student', '/admin/results/themes', BarChart3, 'Bo‘lim bo‘yicha natijalar'],
+    ['access_student', '/admin/results/by-student', ClipboardList, 'O‘quvchi bo‘yicha natijalar'],
 ];
 const STUDY = [
+    ['access_group', '/admin/groups', Layers, 'Guruhlar'],
+    ['access_test', '/admin/homeworks', Home, 'Uyga vazifalar'],
     ['access_test', '/admin/tests', FileQuestion, 'Testlar'],
+    ['access_test', '/admin/active-users', Activity, 'Faol foydalanuvchilar'],
 ];
 const BASE = [
     ['access_question', '/admin/questions', CircleHelp, 'Savollar'],
@@ -87,7 +92,7 @@ export default function Layout() {
                 <aside className={cx('fixed top-16 bottom-0 left-0 z-40 w-64 bg-white border-r border-gray-200 overflow-y-auto transition-transform duration-200 lg:translate-x-0', mobile ? 'translate-x-0' : '-translate-x-full')}>
                     <nav className="p-3">
                         <Nav items={MAIN} can={can} onClick={() => setMobile(false)} />
-                        {can('access_test') && (
+                        {(can('access_test') || can('access_group')) && (
                             <>
                                 <div className="my-3 border-t border-gray-200" />
                                 <p className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500">O‘quv bo‘limi</p>

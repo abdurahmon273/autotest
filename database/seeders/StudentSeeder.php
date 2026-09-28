@@ -14,6 +14,7 @@ class StudentSeeder extends Seeder
             $student = User::create([
                 'name' => fake()->name(),
                 'phone' => fake()->unique()->numerify('9########'),
+                'username' => fake()->unique()->userName(),
                 'password' => 'student123',
             ]);
             $student->roles()->sync([Role::STUDENT]);

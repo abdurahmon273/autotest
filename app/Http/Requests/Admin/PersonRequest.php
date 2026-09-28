@@ -16,7 +16,7 @@ class PersonRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'phone' => User::normalizePhone($this->phone),
+            'phone' => User::normalizePhone($this->phone) ?: null,
             'username' => ltrim((string) $this->username, '@') ?: null,
             'chat_id' => $this->chat_id ?: null,
         ]);
@@ -28,11 +28,12 @@ class PersonRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'digits:9', Rule::unique('users', 'phone')->ignore($person)],
-            'username' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_]+$/', Rule::unique('users', 'username')->ignore($person)],
+            'phone' => ['nullable', 'digits:9', Rule::unique('users', 'phone')->ignore($person)],
+            'group_id' => ['nullable', 'integer', 'exists:groups,id'],
+            'username' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9_]+$/', Rule::unique('users', 'username')->ignore($person)],
             'chat_id' => ['nullable', 'digits_between:5,20', Rule::unique('users', 'chat_id')->ignore($person)],
             'max_attempts' => ['nullable', 'integer', 'min:1', 'max:100'],
-            'password' => [$person ? 'nullable' : 'required', 'string', 'min:6', 'confirmed'],
+            'password' => [$person ? 'nullable' : 'required', 'string', 'min:4', 'max:12'],
         ];
     }
 

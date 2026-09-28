@@ -22,6 +22,7 @@ abstract class PersonController extends ApiController
 
         return User::withRole($this->role)
             ->select('id', 'name', 'phone', 'username', 'chat_id', 'max_attempts', 'created_at')
+            ->with('groups:groups.id,name')
             ->when($request->search, fn ($q, $s) => $q->where(fn ($q) => $q
                 ->where('name', 'like', "%{$s}%")
                 ->orWhere('phone', 'like', "%{$s}%")
@@ -34,8 +35,11 @@ abstract class PersonController extends ApiController
     public function store(PersonRequest $request)
     {
         $this->can("create_{$this->key}");
-        $person = User::create($request->validated());
+        $person = User::create($request->safe()->except('group_id'));
         $person->roles()->sync([$this->role]);
+        if ($request->filled('group_id')) {
+            $person->groups()->sync([$request->group_id]);
+        }
 
         return $this->ok('Saqlandi.', ['id' => $person->id]);
     }
@@ -44,13 +48,21 @@ abstract class PersonController extends ApiController
     {
         $this->can("show_{$this->key}");
 
-        return $this->find($id)->only('id', 'name', 'phone', 'phone_formatted', 'username', 'chat_id', 'max_attempts', 'initials', 'created_at', 'updated_at');
+        $p = $this->find($id);
+        $g = $p->groups()->select('groups.id', 'name')->first();
+
+        return $p->only('id', 'name', 'phone', 'phone_formatted', 'username', 'chat_id', 'max_attempts', 'initials', 'created_at', 'updated_at') + ['group' => $g ? ['id' => $g->id, 'name' => $g->name] : null];
     }
 
     public function update(PersonRequest $request, int $id)
     {
         $this->can("update_{$this->key}");
-        $this->find($id)->update(array_filter($request->validated(), fn ($v, $k) => $k !== 'password' || $v, ARRAY_FILTER_USE_BOTH));
+        $person = $this->find($id);
+        $data = $request->safe()->except('group_id');
+        $person->update(array_filter($data, fn ($v, $k) => ! in_array($k, ['password']) || $v, ARRAY_FILTER_USE_BOTH));
+        if ($request->has('group_id')) {
+            $request->filled('group_id') ? $person->groups()->sync([$request->group_id]) : $person->groups()->detach();
+        }
 
         return $this->ok('Saqlandi.');
     }

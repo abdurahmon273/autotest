@@ -10,7 +10,7 @@ Route::get('login', [AuthController::class, 'show'])->name('login');
 Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
-Route::view('app/{any?}', 'user.app')->where('any', '.*')->middleware('auth')->name('app');
+Route::view('app/{any?}', 'user.app')->where('any', '.*')->middleware(['auth', 'single.session'])->name('app');
 
 Route::post('telegram/webhook', fn () => response()->noContent())->name('telegram.webhook');
 

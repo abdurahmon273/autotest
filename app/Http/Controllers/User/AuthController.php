@@ -28,14 +28,24 @@ class AuthController extends Controller
             return back()->withErrors(['username' => 'Foydalanuvchi nomi yoki parol noto‘g‘ri.'])->onlyInput('username');
         }
 
+        if ($user->max_attempts < 1) {
+            return back()->withErrors(['username' => 'Sizning imkoniyatlaringiz tugagan. Administratorga murojaat qiling.'])->onlyInput('username');
+        }
+
+        if ($user->is_student && $user->groups()->doesntExist()) {
+            return back()->withErrors(['username' => 'Siz hali guruhga biriktirilmagansiz. Administratorga murojaat qiling.'])->onlyInput('username');
+        }
+
         Auth::login($user, true);
         $request->session()->regenerate();
+        $user->forceFill(['session_id' => $request->session()->getId()])->save();
 
         return redirect()->route('app');
     }
 
     public function logout(Request $request)
     {
+        $request->user()?->forceFill(['session_id' => null])->save();
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
