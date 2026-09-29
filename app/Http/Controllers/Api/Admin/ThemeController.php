@@ -110,7 +110,7 @@ class ThemeController extends ApiController
             return null;
         }
         $path = 'settings/'.uniqid('theme_').'.webp';
-        Storage::disk('public')->put($path, (string) (new ImageManager(new Driver))->decodePath($request->file('icon')->getRealPath())->cover(96, 96)->encodeUsingMediaType('image/webp', quality: 90));
+        Storage::disk('public')->put($path, (string) (new ImageManager(new Driver))->read($request->file('icon')->getRealPath())->cover(96, 96)->toWebp(quality: 90));
 
         return $path;
     }

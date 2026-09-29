@@ -1,7 +1,7 @@
 # AutoTest — serverga o‘tkazish
 
 ## Talablar
-- PHP 8.4 (`gd`, `pdo_mysql`, `mbstring`, `bcmath`, `intl`, `zip`, `fileinfo`)
+- PHP 8.2+ (`gd`, `pdo_mysql`, `mbstring`, `bcmath`, `intl`, `zip`, `fileinfo`)
 - MySQL 8 / MariaDB 10.4+
 - Composer 2, Node 20+ (faqat build uchun)
 - Nginx (yoki Apache), HTTPS (Sanctum cookie uchun shart)
@@ -80,7 +80,7 @@ server {
     location / { try_files $uri $uri/ /index.php?$query_string; }
     location ~ \.php$ {
         include fastcgi_params;
-        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
     }
     location ~ /\.(?!well-known) { deny all; }
