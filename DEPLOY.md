@@ -35,10 +35,6 @@ SESSION_DRIVER=database
 SESSION_SECURE_COOKIE=true
 SANCTUM_STATEFUL_DOMAINS=example.uz,www.example.uz   # domen(lar), portsiz
 
-SEED_ADMIN_EMAIL=admin@example.uz
-SEED_ADMIN_PASSWORD=<kuchli parol>
-SEED_TEACHER_PASSWORD=<parol>
-SEED_STUDENT_PASSWORD=<parol>
 ```
 
 ## 3. Baza va seed (bir marta)
@@ -49,7 +45,7 @@ php artisan storage:link
 ```
 Seed nima yaratadi:
 - Rollar: Admin, Teacher, Student; 47 ta ruxsat (Admin roliga hammasi)
-- Foydalanuvchilar: `admin` (email = SEED_ADMIN_EMAIL, `/admin/login`), `teacher`, `student` (username + parol, `/login`)
+- Foydalanuvchilar: admin — `admin@autotest.uz` / `admin123` (`/admin/login`); `teacher` / `teacher123`, `student` / `student123` (`/login`). Seeddan keyin parollarni admin panelda almashtiring.
 - Tillar: Uzbek (lotin) `latin` — birlamchi, Uzbek (krill) `krill`
 - 20 ta asosiy mavzu (lotin + krill nomlari, emoji)
 - 3 ta namunaviy savol (2 tasi rasmli), rasmlar `public/backup/images/` dan `storage/app/public/images/` ga ko‘chiriladi
