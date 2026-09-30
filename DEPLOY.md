@@ -1,4 +1,4 @@
-# AutoTest — serverga o‘tkazish
+# Prava Center — serverga o‘tkazish
 
 ## Talablar
 - PHP 8.2+ (`gd`, `pdo_mysql`, `mbstring`, `bcmath`, `intl`, `zip`, `fileinfo`)
