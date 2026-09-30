@@ -6,13 +6,14 @@ import { RolesPermissions } from './Staff';
 import { ROLE_ADMIN, fmtDate } from '../lib/utils';
 
 function InfoForm({ user }) {
-    const [f, setF] = useState({ name: user.name, username: user.username ?? '', chat_id: user.chat_id ?? '' });
+    const [f, setF] = useState({ name: user.name, email: user.email ?? '', username: user.username ?? '', chat_id: user.chat_id ?? '' });
     const { save, saving, errors } = useSave({ invalidate: ['/profile', 'me'] });
     return (
         <form onSubmit={e => { e.preventDefault(); save({ method: 'put', url: '/profile', data: f }); }} className="card p-6">
             <h3 className="text-sm font-semibold text-gray-900 mb-4">Shaxsiy ma’lumotlar</h3>
             <div className="space-y-4">
                 <Field label="To‘liq ism" error={errors.name}><Input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></Field>
+                <Field label="Email" hint="(kirish uchun)" error={errors.email}><Input type="email" value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="admin@example.com" autoComplete="email" /></Field>
                 <Field label="Username" error={errors.username}><Input value={f.username} onChange={e => setF({ ...f, username: e.target.value })} placeholder="username" /></Field>
                 <Field label="Telegram ID" error={errors.chat_id}><Input value={f.chat_id} onChange={e => setF({ ...f, chat_id: e.target.value })} placeholder="123456789" /></Field>
             </div>

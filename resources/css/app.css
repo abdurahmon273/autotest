@@ -59,10 +59,19 @@
         @apply rounded-xl border border-gray-200 bg-white shadow-sm;
     }
     .table-th {
-        @apply px-5 py-3 text-left text-xs font-semibold text-gray-700;
+        @apply px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500 whitespace-nowrap;
     }
     .table-td {
         @apply px-5 py-3.5 text-sm text-gray-700;
+    }
+    .table-head {
+        @apply bg-gray-50 border-b border-gray-200;
+    }
+    .table-body {
+        @apply divide-y divide-gray-100;
+    }
+    .table-body tr {
+        @apply transition-colors hover:bg-gray-50/70;
     }
     .theme-label {
         @apply inline-flex items-center gap-1.5 align-middle;

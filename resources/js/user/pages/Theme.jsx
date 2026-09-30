@@ -4,6 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { LoaderCircle } from 'lucide-react';
 import api from '../api';
 import Quiz from '../components/Quiz';
+import HomeworkBanner from '../components/HomeworkBanner';
 import { useLang } from '../lib';
 
 export default function Theme() {
@@ -18,6 +19,8 @@ export default function Theme() {
     if (quiz) return <Quiz data={quiz} onRestart={() => { setQuiz(null); start.mutate(); }} restarting={start.isPending} />;
 
     return (
+        <>
+        <HomeworkBanner themeId={id} />
         <div className="flex-1 flex items-center justify-center p-6">
             <div className="w-full max-w-lg rounded-2xl bg-white overflow-hidden text-gray-900 shadow-2xl">
                 <div className="bg-gradient-to-r from-[#0f2a5c] to-[#3b5bdb] px-8 py-10 text-white">
@@ -38,5 +41,6 @@ export default function Theme() {
                 </div>
             </div>
         </div>
+        </>
     );
 }

@@ -17,6 +17,7 @@ class Result extends Model
         'user_id',
         'type',
         'theme_id',
+        'homework_id',
         'status',
         'correct',
         'in_correct',
@@ -46,5 +47,10 @@ class Result extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function homework(): BelongsTo
+    {
+        return $this->belongsTo(Homework::class);
     }
 }

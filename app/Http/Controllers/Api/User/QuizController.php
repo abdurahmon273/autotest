@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api\User;
 
 use App\Enums\QuizEnum;
 use App\Http\Controllers\Controller;
+use App\Models\Homework;
 use App\Models\Result;
 use App\Models\Theme;
 use App\Services\Quiz\QuizService;
 use App\Services\Quiz\TopicQuizService;
+use App\Services\HomeworkService;
 use App\Support\Lang;
 use Illuminate\Http\Request;
 
@@ -56,11 +58,29 @@ class QuizController extends Controller
         return $service->payload($service->start($request->user(), $theme->id, $lang), $lang);
     }
 
-    public function show(Request $request, Result $result)
+    public function show(Request $request, Result $result, HomeworkService $homeworks)
     {
         abort_unless($result->user_id === $request->user()->id, 403);
 
-        return QuizService::for($result->type)->payload($result, Lang::pick($request->lang));
+        return QuizService::for($result->type)->payload($result, Lang::pick($request->lang)) + ['homework_options' => $homeworks->optionsForResult($result)];
+    }
+
+    /** Menyu uchun: userning faol vazifalari (bo'sh bo'lsa bo'lim ko'rinmaydi). */
+    public function homeworks(Request $request, HomeworkService $homeworks)
+    {
+        return $homeworks->listForUser($request->user(), Lang::pick($request->lang));
+    }
+
+    /** Yakunlangan natijani vazifa sifatida saqlash. */
+    public function attachHomework(Request $request, Result $result, HomeworkService $homeworks)
+    {
+        abort_unless($result->user_id === $request->user()->id, 403);
+        $data = $request->validate(['homework_id' => ['required', 'integer']]);
+        $homework = Homework::where('user_id', $request->user()->id)->findOrFail($data['homework_id']);
+
+        $homework = $homeworks->attach($result, $homework);
+
+        return ['message' => 'Vazifa sifatida saqlandi.', 'homework' => $homeworks->summary($homework)];
     }
 
     public function texts(Request $request, Result $result)
@@ -70,18 +90,23 @@ class QuizController extends Controller
         return QuizService::for($result->type)->texts($result, Lang::pick($request->lang));
     }
 
-    public function answer(Request $request, Result $result)
+    public function answer(Request $request, Result $result, HomeworkService $homeworks)
     {
         abort_unless($result->user_id === $request->user()->id, 403);
         $data = $request->validate(['question_id' => ['required', 'integer'], 'answer_id' => ['required', 'integer']]);
 
-        return QuizService::for($result->type)->answer($result, $data['question_id'], $data['answer_id']);
+        $res = QuizService::for($result->type)->answer($result, $data['question_id'], $data['answer_id']);
+        if ($result->status === \App\Enums\ResultStatusEnum::FINISHED) {
+            $res['homework_options'] = $homeworks->optionsForResult($result);
+        }
+
+        return $res;
     }
 
     public function lastThemeResult(Request $request, Theme $theme, TopicQuizService $service)
     {
         $last = $service->lastResult($request->user(), $theme->id);
 
-        return $last ? $service->payload($last, Lang::pick($request->lang)) : response()->json(null);
+        return $last ? $service->payload($last, Lang::pick($request->lang)) + ['homework_options' => app(HomeworkService::class)->optionsForResult($last)] : response()->json(null);
     }
 }

@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Eye, Inbox, LoaderCircle, Save, Search, SquarePen, Trash2 } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Inbox, LoaderCircle, Save, Search, SquarePen, Trash2 } from 'lucide-react';
 import { cx } from '../lib/utils';
 
 export const PageHeader = ({ title, children }) => (
@@ -9,10 +10,17 @@ export const PageHeader = ({ title, children }) => (
     </div>
 );
 
-const colors = { blue: 'bg-blue-50 text-blue-700', green: 'bg-green-50 text-green-700', gray: 'bg-gray-100 text-gray-700', purple: 'bg-purple-50 text-purple-700', amber: 'bg-amber-50 text-amber-700' };
+const colors = { blue: 'bg-blue-50 text-blue-700', green: 'bg-green-50 text-green-700', red: 'bg-red-50 text-red-700', gray: 'bg-gray-100 text-gray-700', purple: 'bg-purple-50 text-purple-700', amber: 'bg-amber-50 text-amber-700' };
 export const Badge = ({ color = 'blue', className, children }) => (
     <span className={cx('inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium', colors[color], className)}>{children}</span>
 );
+
+const chipColors = ['bg-blue-50 text-blue-700 border-blue-100', 'bg-violet-50 text-violet-700 border-violet-100', 'bg-emerald-50 text-emerald-700 border-emerald-100', 'bg-amber-50 text-amber-700 border-amber-100', 'bg-rose-50 text-rose-700 border-rose-100', 'bg-cyan-50 text-cyan-700 border-cyan-100'];
+export const GroupChips = ({ groups, empty = '—' }) => groups?.length ? (
+    <div className="flex flex-wrap gap-1">
+        {groups.map(g => <span key={g.id} className={cx('inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium whitespace-nowrap', chipColors[g.id % chipColors.length])}>{g.name}</span>)}
+    </div>
+) : <span className="text-gray-400">{empty}</span>;
 
 export const Avatar = ({ name, size = 'w-8 h-8 text-xs' }) => (
     <span className={cx('rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-semibold shrink-0', size)}>{(name || '?').trim().charAt(0).toUpperCase()}</span>
@@ -49,6 +57,18 @@ export const Field = ({ label, error, hint, children, className }) => (
 );
 
 export const Input = ({ error, className, ...p }) => <input className={cx('form-input', className)} {...p} />;
+
+export const PasswordInput = ({ className, ...p }) => {
+    const [show, setShow] = useState(false);
+    return (
+        <div className="relative">
+            <Input type={show ? 'text' : 'password'} className={cx('pr-10', className)} {...p} />
+            <button type="button" tabIndex={-1} onClick={() => setShow(s => !s)} aria-label={show ? 'Parolni yashirish' : 'Parolni ko‘rsatish'} className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-700">
+                {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+        </div>
+    );
+};
 
 export const SaveButton = ({ saving, children = 'Saqlash', icon: Icon = Save, className = 'btn-primary', ...p }) => (
     <button type="submit" className={className} disabled={saving} {...p}>
@@ -89,12 +109,14 @@ export const Pagination = ({ meta, onPage }) => {
     );
 };
 
+export const THead = ({ children }) => <thead className="table-head"><tr>{children}</tr></thead>;
+
 export const Table = ({ head, cols, loading, rows, empty, render, meta, onPage }) => (
-    <div className="card">
+    <div className="card overflow-hidden">
         <div className="overflow-x-auto">
             <table className="min-w-full">
-                <thead className="border-b border-gray-200"><tr>{head}</tr></thead>
-                <tbody className="divide-y divide-gray-100">
+                <THead>{head}</THead>
+                <tbody className="table-body">
                     {loading ? <SkeletonRows cols={cols} /> : rows?.length ? rows.map(render) : <Empty colSpan={cols} text={empty} />}
                 </tbody>
             </table>

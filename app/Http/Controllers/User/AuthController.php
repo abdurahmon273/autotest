@@ -25,18 +25,18 @@ class AuthController extends Controller
             ->first();
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
-            return back()->withErrors(['username' => 'Foydalanuvchi nomi yoki parol noto‘g‘ri.'])->onlyInput('username');
+            return back()->withErrors(['username' => 'Foydalanuvchi nomi yoki parol noto‘g‘ri.'])->onlyInput('username', 'remember');
         }
 
         if ($user->max_attempts < 1) {
-            return back()->withErrors(['username' => 'Sizning imkoniyatlaringiz tugagan. Administratorga murojaat qiling.'])->onlyInput('username');
+            return back()->withErrors(['username' => 'Sizning imkoniyatlaringiz tugagan. Administratorga murojaat qiling.'])->onlyInput('username', 'remember');
         }
 
         if ($user->is_student && $user->groups()->doesntExist()) {
-            return back()->withErrors(['username' => 'Siz hali guruhga biriktirilmagansiz. Administratorga murojaat qiling.'])->onlyInput('username');
+            return back()->withErrors(['username' => 'Siz hali guruhga biriktirilmagansiz. Administratorga murojaat qiling.'])->onlyInput('username', 'remember');
         }
 
-        Auth::login($user, true);
+        Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
         $user->forceFill(['session_id' => $request->session()->getId()])->save();
 

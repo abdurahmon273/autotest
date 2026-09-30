@@ -33,7 +33,7 @@ export function useDelete(listKey, message) {
         mutationFn: url => api.delete(url).then(r => r.data),
         onSuccess: d => {
             toast(d.message);
-            qc.invalidateQueries({ queryKey: [listKey] });
+            qc.invalidateQueries({ queryKey: Array.isArray(listKey) ? listKey : [listKey] });
         },
         onError: e => toast(messageOf(e), 'error'),
     });
@@ -54,7 +54,7 @@ export function useSave({ onSuccess, invalidate = [] }) {
         onSuccess: d => {
             setErrors({});
             toast(d.message);
-            invalidate.forEach(k => qc.invalidateQueries({ queryKey: [k] }));
+            invalidate.forEach(k => qc.invalidateQueries({ queryKey: Array.isArray(k) ? k : [k] }));
             onSuccess?.(d);
         },
         onError: e => {

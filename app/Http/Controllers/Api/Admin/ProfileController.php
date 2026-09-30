@@ -20,13 +20,14 @@ class ProfileController extends ApiController
     {
         $this->can('update_profile');
         $user = $request->user();
-        $request->merge(['username' => ltrim((string) $request->username, '@') ?: null, 'chat_id' => $request->chat_id ?: null]);
+        $request->merge(['username' => ltrim((string) $request->username, '@') ?: null, 'chat_id' => $request->chat_id ?: null, 'email' => strtolower(trim((string) $request->email))]);
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'username' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_]+$/', Rule::unique('users', 'username')->ignore($user->id)],
             'chat_id' => ['nullable', 'digits_between:5,20', Rule::unique('users', 'chat_id')->ignore($user->id)],
-        ], ['username.regex' => 'Faqat harf, raqam va _']);
+        ], ['username.regex' => 'Faqat harf, raqam va _', 'email.unique' => 'Bu email boshqa foydalanuvchida mavjud.'], ['email' => 'email']);
 
         $user->update($data);
 

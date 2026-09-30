@@ -6,6 +6,7 @@ use App\Http\Requests\Admin\GroupRequest;
 use App\Models\Group;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\HomeworkService;
 use Illuminate\Http\Request;
 
 class GroupController extends ApiController
@@ -32,7 +33,7 @@ class GroupController extends ApiController
     public function store(GroupRequest $request)
     {
         $this->can('create_group');
-        $group = Group::create($request->safe()->only('name', 'description'));
+        $group = Group::create($request->safe()->only('name', 'description', 'telegram_chat_id'));
         $group->students()->sync($request->input('students', []));
 
         return $this->ok('Saqlandi.', ['id' => $group->id]);
@@ -42,14 +43,14 @@ class GroupController extends ApiController
     {
         $this->can('show_group');
 
-        return $group->only('id', 'name', 'description', 'created_at')
+        return $group->only('id', 'name', 'description', 'telegram_chat_id', 'created_at')
             + ['students' => $group->students()->get(['users.id', 'name', 'phone', 'users.created_at'])];
     }
 
     public function update(GroupRequest $request, Group $group)
     {
         $this->can('update_group');
-        $group->update($request->safe()->only('name', 'description'));
+        $group->update($request->safe()->only('name', 'description', 'telegram_chat_id'));
 
         return $this->ok('Saqlandi.');
     }
@@ -83,6 +84,7 @@ class GroupController extends ApiController
         $ids = $request->validate(['ids' => ['required', 'array', 'min:1'], 'ids.*' => ['integer']])['ids'];
         $ids = User::withRole(Role::STUDENT)->whereIn('id', $ids)->pluck('id')->all();
         $group->students()->syncWithoutDetaching($ids);
+        app(HomeworkService::class)->createForStudents($group, $ids);
 
         return $this->ok(count($ids).' ta student qo‘shildi.');
     }

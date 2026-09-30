@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Permission;
+use App\Models\Role;
 use Illuminate\Database\Seeder;
 
 class PermissionSeeder extends Seeder
@@ -19,7 +20,7 @@ class PermissionSeeder extends Seeder
             ['access_test', Permission::TYPE_ADMIN],
         ];
 
-        foreach (['teacher', 'student', 'group', 'question', 'theme', 'staff', 'role', 'permission'] as $module) {
+        foreach (['teacher', 'student', 'group', 'question', 'theme', 'staff', 'role', 'permission', 'task'] as $module) {
             foreach (['access', 'create', 'update', 'delete', 'show'] as $action) {
                 $rows[] = ["{$action}_{$module}", Permission::TYPE_ADMIN];
             }
@@ -31,5 +32,11 @@ class PermissionSeeder extends Seeder
         }
 
         Permission::upsert($permissions, ['id'], ['title', 'type']);
+
+        // Admin roliga yangi qo'shilgan admin-turidagi ruxsatlarni biriktirish (mavjudlari saqlanadi).
+        if ($admin = Role::find(Role::ADMIN)) {
+            $admin->permissions()->syncWithoutDetaching(Permission::whereIn('type', [Permission::TYPE_ADMIN, Permission::TYPE_ALL])->pluck('id'));
+            $admin->flushUsersPermissionCache();
+        }
     }
 }

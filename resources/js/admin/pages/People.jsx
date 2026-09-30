@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useDebounce, useDelete, useItem, useList } from '../lib/hooks';
-import { Actions, Avatar, BackLink, PageHeader, SearchInput, Table, Th, Td } from '../components/ui';
+import { Actions, Avatar, BackLink, GroupChips, PageHeader, SearchInput, Table, Td, Th } from '../components/ui';
 import { fmtDate, fmtPhone } from '../lib/utils';
 import PersonModal from '../components/PersonModal';
 
@@ -37,7 +37,7 @@ export function PeopleIndex({ kind }) {
                         <Td className="text-gray-700">{p.username ?? '—'}</Td>
                         <Td>{p.phone ? fmtPhone(p.phone) : '—'}</Td>
                         <Td className="text-gray-500">{p.chat_id ?? '—'}</Td>
-                        {kind === 'students' && <Td className="text-gray-500">{p.groups?.map(g => g.name).join(', ') || '—'}</Td>}
+                        {kind === 'students' && <Td><GroupChips groups={p.groups} /></Td>}
                         <Td className="text-gray-500">{fmtDate(p.created_at)}</Td>
                         <Td><Actions show={can(`show_${k.key}`) && `/admin/${kind}/${p.id}`} onEdit={can(`update_${k.key}`) && (() => setModal({ id: p.id }))} onDelete={can(`delete_${k.key}`) && (() => del(`/${kind}/${p.id}`, `${p.name} o‘chirilsinmi?`))} /></Td>
                     </tr>

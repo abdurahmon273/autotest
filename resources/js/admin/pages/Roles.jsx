@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Plus, SquarePen } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useDebounce, useDelete, useItem, useList, useSave } from '../lib/hooks';
-import { Actions, BackLink, Badge, Empty, Field, Input, PageHeader, SaveButton, SearchInput, Table, Th, Td } from '../components/ui';
+import { Actions, BackLink, Badge, Empty, Field, Input, PageHeader, SaveButton, SearchInput, Table, Td, Th, THead } from '../components/ui';
 import { PERMISSION_TYPES, SYSTEM_ROLES, fmtDate, fmtPhone } from '../lib/utils';
 
 export function RolesIndex() {
@@ -100,8 +100,8 @@ export function RoleShow() {
                 <div className="card lg:col-span-3">
                     <div className="px-5 py-4 border-b border-gray-200"><h3 className="text-sm font-semibold text-gray-900">Ushbu roldagi foydalanuvchilar</h3></div>
                     <table className="min-w-full">
-                        <thead className="border-b border-gray-200"><tr><Th>To‘liq ism</Th><Th>Email / Telefon</Th><Th>Yaratilgan sana</Th></tr></thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <THead><Th>To‘liq ism</Th><Th>Email / Telefon</Th><Th>Yaratilgan sana</Th></THead>
+                        <tbody className="table-body">
                             {r.users.length ? r.users.map(u => <tr key={u.id} className="hover:bg-gray-50"><Td className="font-medium text-gray-900">{u.name}</Td><Td>{u.email ?? fmtPhone(u.phone)}</Td><Td className="text-gray-500">{fmtDate(u.created_at)}</Td></tr>) : <Empty colSpan={3} />}
                         </tbody>
                     </table>

@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\Admin\QuestionController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\Admin\StaffController;
 use App\Http\Controllers\Api\Admin\StudentController;
+use App\Http\Controllers\Api\Admin\TaskController;
 use App\Http\Controllers\Api\Admin\TeacherController;
 use App\Http\Controllers\Api\Admin\TelegramSettingController;
 use App\Http\Controllers\Api\Admin\ThemeController;
@@ -24,6 +25,9 @@ Route::prefix('admin')->group(function () {
         Route::get('me', [AuthController::class, 'me']);
         Route::get('dashboard', DashboardController::class);
 
+        Route::get('students/manage', [StudentController::class, 'manage']);
+        Route::get('students/groups', [StudentController::class, 'groups']);
+        Route::put('students/{id}/attempts', [StudentController::class, 'attempts']);
         Route::get('students/search', [StudentController::class, 'search']);
         Route::get('students/pick', [StudentController::class, 'pick']);
         Route::apiResource('teachers', TeacherController::class);
@@ -39,6 +43,14 @@ Route::prefix('admin')->group(function () {
         Route::get('questions/languages', [QuestionController::class, 'languages']);
         Route::get('questions/{question}/edit', [QuestionController::class, 'edit']);
         Route::apiResource('questions', QuestionController::class);
+
+        Route::get('tasks/groups', [TaskController::class, 'groups']);
+        Route::get('tasks/groups/{group}', [TaskController::class, 'group']);
+        Route::get('tasks/themes', [TaskController::class, 'themes']);
+        Route::get('tasks/{task}/homeworks', [TaskController::class, 'homeworks']);
+        Route::get('tasks/{task}/pdf', [TaskController::class, 'pdf']);
+        Route::post('tasks/{task}/telegram', [TaskController::class, 'telegram']);
+        Route::apiResource('tasks', TaskController::class);
 
         Route::get('themes/search', [ThemeController::class, 'search']);
         Route::get('themes/languages', [ThemeController::class, 'languages']);
@@ -78,4 +90,6 @@ Route::prefix('user')->middleware(['auth:sanctum', 'single.session', 'user'])->g
     Route::get('results/{result}', [QuizController::class, 'show']);
     Route::get('results/{result}/texts', [QuizController::class, 'texts']);
     Route::post('results/{result}/answer', [QuizController::class, 'answer']);
+    Route::post('results/{result}/homework', [QuizController::class, 'attachHomework']);
+    Route::get('homeworks', [QuizController::class, 'homeworks']);
 });

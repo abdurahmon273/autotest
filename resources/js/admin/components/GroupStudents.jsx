@@ -6,7 +6,7 @@ import { useDebounce } from '../lib/hooks';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 import StudentPicker from './StudentPicker';
-import { Empty, SearchInput, SkeletonRows, Th, Td } from './ui';
+import { Empty, SearchInput, SkeletonRows, Td, Th, THead } from './ui';
 import { fmtPhone } from '../lib/utils';
 
 export default function GroupStudents({ groupId, selected, onChange }) {
@@ -66,8 +66,8 @@ export default function GroupStudents({ groupId, selected, onChange }) {
                 </div>
             </div>
             <table className="min-w-full">
-                <thead className="border-b border-gray-200"><tr><Th className="w-12">#</Th><Th>To‘liq ism</Th><Th>Telefon</Th><Th>Username</Th><Th>Telegram ID</Th><Th className="text-right">Amallar</Th></tr></thead>
-                <tbody className="divide-y divide-gray-100">
+                <THead><Th className="w-12">#</Th><Th>To‘liq ism</Th><Th>Telefon</Th><Th>Username</Th><Th>Telegram ID</Th><Th className="text-right">Amallar</Th></THead>
+                <tbody className="table-body">
                     {loading ? <SkeletonRows cols={6} rows={4} /> : rows.length ? rows.map((s, i) => (
                         <tr key={s.id} className="hover:bg-gray-50">
                             <Td className="text-gray-400">{i + 1}</Td>

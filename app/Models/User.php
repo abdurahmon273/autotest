@@ -54,6 +54,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Group::class);
     }
 
+    public function homeworks(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Homework::class);
+    }
+
     public function scopeWithRole(Builder $q, int $roleId): Builder
     {
         return $q->whereHas('roles', fn ($q) => $q->where('roles.id', $roleId));

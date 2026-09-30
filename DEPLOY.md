@@ -35,6 +35,12 @@ SESSION_DRIVER=database
 SESSION_SECURE_COOKIE=true
 SANCTUM_STATEFUL_DOMAINS=example.uz,www.example.uz   # domen(lar), portsiz
 
+LOG_CHANNEL=stack
+LOG_STACK=daily,telegram
+LOG_LEVEL=error
+TELEGRAM_LOG_BOT_TOKEN=<bot token>
+TELEGRAM_LOG_CHAT_ID=-100xxxxxxxxxx      # xatolar kanali (bot kanalda admin bo'lishi shart)
+
 ```
 
 ## 3. Baza va seed (bir marta)
@@ -62,7 +68,26 @@ chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
 php artisan config:cache && php artisan route:cache && php artisan view:cache
 ```
-Keyingi deploylarda: `git pull && composer install --no-dev && npm run build && php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache`.
+Keyingi deploylarda: `git pull && composer install --no-dev && npm run build && php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan queue:restart`.
+
+## 4.1 Queue worker (majburiy)
+Uy vazifasi muddati tugashi (`FinishTaskJob`) va Telegram xabarlari navbat (queue) orqali ishlaydi. Serverda doimiy worker bo'lishi shart.
+`/etc/supervisor/conf.d/autotest-worker.conf`:
+```ini
+[program:autotest-worker]
+command=php /var/www/autotest/artisan queue:work --sleep=3 --tries=3 --max-time=3600
+directory=/var/www/autotest
+user=www-data
+autostart=true
+autorestart=true
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/var/www/autotest/storage/logs/worker.log
+```
+```bash
+sudo supervisorctl reread && sudo supervisorctl update && sudo supervisorctl start autotest-worker
+```
+Har deploydan keyin `php artisan queue:restart` — worker yangi kodni oladi.
 
 ## 5. Nginx (namuna)
 ```nginx
@@ -87,7 +112,17 @@ PHP: `upload_max_filesize=10M`, `post_max_size=12M`.
 ## 6. Telegram
 Admin → Sozlamalar → Telegram sozlamalari → bot token → Saqlash: `https://example.uz/telegram/webhook` ga `setWebhook` yuboriladi (faqat HTTPS domenida ishlaydi). Webhook handler hozircha bo‘sh (`204`).
 
-## 7. Tekshirish
+## 7. Xatolar Telegram kanali
+@BotFather dan bot yarating (yoki mavjud botdan foydalaning), yopiq kanal oching, botni kanalga **admin** qilib qo'shing.
+Kanal `chat_id` sini olish: kanalga biror xabar yuboring, so'ng
+`https://api.telegram.org/bot<TOKEN>/getUpdates` ni oching — `chat.id` `-100...` ko'rinishida bo'ladi.
+`.env` ga `TELEGRAM_LOG_*` ni yozib, `php artisan config:cache` qiling. Tekshirish:
+```bash
+php artisan tinker --execute="Log::error('Telegram log test')"
+```
+Kanalga `error` va undan yuqori (critical, alert, emergency) darajadagi xatolar keladi. Handler xatosi asosiy ishga ta'sir qilmaydi (jim o'tkaziladi).
+
+## 8. Tekshirish
 - `https://example.uz/` — landing
 - `https://example.uz/admin/login` — admin (email + parol)
 - `https://example.uz/login` — student/teacher (username + parol)

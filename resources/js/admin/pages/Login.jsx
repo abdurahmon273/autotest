@@ -3,7 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { LoaderCircle } from 'lucide-react';
 import api, { errorsOf } from '../api';
 import { useAuth } from '../lib/auth';
-import { Field, Input } from '../components/ui';
+import { Field, Input, PasswordInput } from '../components/ui';
 
 export default function Login() {
     const { user, loading, setMe } = useAuth();
@@ -36,7 +36,7 @@ export default function Login() {
                     <Input type="email" autoFocus value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="admin@example.com" />
                 </Field>
                 <Field label="Password" error={errors.password} className="mb-4">
-                    <Input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="••••••••" />
+                    <PasswordInput value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="••••••••" />
                 </Field>
                 <label className="mb-6 flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
                     <input type="checkbox" checked={form.remember} onChange={e => setForm({ ...form, remember: e.target.checked })} className="h-4 w-4 rounded border-gray-300 text-admin-primary focus:ring-admin-primary" />

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Briefcase, GraduationCap, UserPlus, Users } from 'lucide-react';
 import { useItem } from '../lib/hooks';
 import { useAuth } from '../lib/auth';
-import { Empty, PageHeader, SkeletonBlock, SkeletonRows, Th, Td } from '../components/ui';
+import { Empty, PageHeader, SkeletonBlock, SkeletonRows, Td, Th, THead } from '../components/ui';
 import { fmtDate, fmtPhone } from '../lib/utils';
 
 export default function Dashboard() {
@@ -35,8 +35,8 @@ export default function Dashboard() {
                     {can('access_student') && <Link to="/admin/students" className="text-sm text-blue-600 hover:underline">Barchasi</Link>}
                 </div>
                 <table className="min-w-full">
-                    <thead className="border-b border-gray-200"><tr><Th>To‘liq ism</Th><Th>Telefon</Th><Th>Yaratilgan sana</Th></tr></thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <THead><Th>To‘liq ism</Th><Th>Telefon</Th><Th>Yaratilgan sana</Th></THead>
+                    <tbody className="table-body">
                         {isLoading ? <SkeletonRows cols={3} rows={5} /> : data.recent.length ? data.recent.map(s => (
                             <tr key={s.id} className="hover:bg-gray-50"><Td className="font-medium text-gray-900">{s.name}</Td><Td>{fmtPhone(s.phone)}</Td><Td className="text-gray-500">{fmtDate(s.created_at)}</Td></tr>
                         )) : <Empty colSpan={3} />}

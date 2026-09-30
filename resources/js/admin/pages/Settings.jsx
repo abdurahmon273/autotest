@@ -4,7 +4,7 @@ import { useDelete, useItem, useSave } from '../lib/hooks';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { messageOf } from '../api';
 import { useToast } from '../lib/toast';
-import { Badge, Empty, Field, Input, PageHeader, SaveButton, Th, Td } from '../components/ui';
+import { Badge, Empty, Field, Input, PageHeader, SaveButton, Td, Th, THead } from '../components/ui';
 
 export function TelegramSettings() {
     const { data } = useItem('/settings/telegram');
@@ -94,8 +94,8 @@ export function GeneralSettings() {
                         <button type="button" className="btn-primary py-1.5" onClick={() => setModal({})}><Plus className="w-4 h-4" /> Qo‘shish</button>
                     </div>
                     <table className="min-w-full">
-                        <thead className="border-b border-gray-200"><tr><Th className="w-12">#</Th><Th>Nomi</Th><Th>Kodi</Th><Th>Holati</Th><Th className="text-right">Amallar</Th></tr></thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <THead><Th className="w-12">#</Th><Th>Nomi</Th><Th>Kodi</Th><Th>Holati</Th><Th className="text-right">Amallar</Th></THead>
+                        <tbody className="table-body">
                             {data.languages.length ? data.languages.map(l => (
                                 <tr key={l.id} className="hover:bg-gray-50">
                                     <Td className="text-gray-400">{l.id}</Td>

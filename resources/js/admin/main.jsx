@@ -17,6 +17,8 @@ import { PermissionForm, PermissionShow, PermissionsIndex } from './pages/Permis
 import { ThemeForm, ThemesIndex } from './pages/Themes';
 import { QuestionForm, QuestionShow, QuestionsIndex } from './pages/Questions';
 import Profile from './pages/Profile';
+import StudentsManage from './pages/StudentsManage';
+import { HomeworkForm, HomeworkGroupShow, HomeworkGroups, HomeworkShow } from './pages/Homeworks';
 import { GeneralSettings, Placeholder, TelegramSettings, Tests } from './pages/Settings';
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false, staleTime: 30_000 } } });
@@ -57,7 +59,14 @@ createRoot(document.getElementById('app')).render(
                                         {crud('themes', ThemesIndex, ThemeForm)}
                                         {crud('questions', QuestionsIndex, QuestionForm, QuestionShow)}
                                         <Route path="tests" element={<Tests />} />
-                                        <Route path="homeworks" element={<Placeholder title="Uyga vazifalar" />} />
+                                        <Route path="homeworks">
+                                            <Route index element={<HomeworkGroups />} />
+                                            <Route path=":groupId" element={<HomeworkGroupShow />} />
+                                            <Route path=":groupId/create" element={<HomeworkForm />} />
+                                            <Route path=":groupId/:id" element={<HomeworkShow />} />
+                                            <Route path=":groupId/:id/edit" element={<HomeworkForm />} />
+                                        </Route>
+                                        <Route path="students-manage" element={<StudentsManage />} />
                                         <Route path="active-users" element={<Placeholder title="Faol foydalanuvchilar" />} />
                                         <Route path="results/students" element={<Placeholder title="O‘quvchi natijalari" />} />
                                         <Route path="results/themes" element={<Placeholder title="Bo‘lim bo‘yicha natijalar" />} />

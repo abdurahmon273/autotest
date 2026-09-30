@@ -11,6 +11,49 @@ class StudentController extends PersonController
     protected int $role = Role::STUDENT;
     protected string $key = 'student';
 
+    /** O'quvchilar boshqaruvi ro'yxati: qidiruv, holat (faol/bloklangan), guruh filtri. */
+    public function manage(Request $request)
+    {
+        $this->can('access_student');
+
+        return \App\Models\User::withRole(Role::STUDENT)
+            ->select('id', 'name', 'phone', 'username', 'max_attempts', 'created_at')
+            ->with('groups:groups.id,name')
+            ->withCount('homeworks')
+            ->when($request->search, fn ($q, $s) => $q->where(fn ($q) => $q
+                ->where('name', 'like', "%{$s}%")
+                ->orWhere('username', 'like', "%{$s}%")
+                ->orWhere('phone', 'like', "%{$s}%")))
+            ->when($request->status === 'active', fn ($q) => $q->where('max_attempts', '>', 0))
+            ->when($request->status === 'blocked', fn ($q) => $q->where('max_attempts', '<=', 0))
+            ->when($request->group_id, fn ($q, $g) => $q->whereHas('groups', fn ($q) => $q->where('groups.id', $g)))
+            ->latest('id')
+            ->paginate(15);
+    }
+
+    /** Filtr uchun guruhlar ro'yxati. */
+    public function groups()
+    {
+        $this->can('access_student');
+
+        return Group::orderBy('name')->get(['id', 'name']);
+    }
+
+    /** Imkoniyatlar sonini o'zgartirish / bloklash (max_attempts = 0). */
+    public function attempts(Request $request, int $id)
+    {
+        $this->can('update_student');
+        $data = $request->validate([
+            'max_attempts' => ['required', 'integer', 'min:0', 'max:1000'],
+            'blocked' => ['nullable', 'boolean'],
+        ], [], ['max_attempts' => 'imkoniyatlar soni']);
+
+        $student = $this->find($id);
+        $student->update(['max_attempts' => $request->boolean('blocked') ? 0 : $data['max_attempts']]);
+
+        return $this->ok($request->boolean('blocked') ? 'O‘quvchi bloklandi.' : 'Saqlandi.', ['max_attempts' => $student->max_attempts]);
+    }
+
     public function pick(Request $request)
     {
         $this->can('access_student');

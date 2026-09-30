@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Plus, SquarePen, UserPlus } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useDebounce, useDelete, useItem, useList, useSave } from '../lib/hooks';
-import { Actions, BackLink, Empty, Field, Input, PageHeader, SaveButton, SearchInput, Table, Th, Td } from '../components/ui';
+import { Actions, BackLink, Empty, Field, Input, PageHeader, SaveButton, SearchInput, Table, Td, Th, THead } from '../components/ui';
 import GroupStudents from '../components/GroupStudents';
 import StudentPicker from '../components/StudentPicker';
 import { fmtDate, fmtPhone } from '../lib/utils';
@@ -51,7 +51,7 @@ export function GroupForm() {
     const [form, setForm] = useState(null);
     const [students, setStudents] = useState([]);
     const { save, saving, errors } = useSave({ onSuccess: () => nav('/admin/groups'), invalidate: ['/groups', `/groups/${id}`] });
-    const f = form ?? { name: data?.name ?? '', description: data?.description ?? '' };
+    const f = form ?? { name: data?.name ?? '', description: data?.description ?? '', telegram_chat_id: data?.telegram_chat_id ?? '' };
     const set = (k, v) => setForm({ ...f, [k]: v });
     if (id && !data) return null;
 
@@ -62,9 +62,10 @@ export function GroupForm() {
                 <SaveButton saving={saving} />
             </PageHeader>
             <div className="card p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <Field label="Nomi" error={errors.name}><Input value={f.name} onChange={e => set('name', e.target.value)} required /></Field>
                     <Field label="Tasnif" error={errors.description}><Input value={f.description} onChange={e => set('description', e.target.value)} /></Field>
+                    <Field label="Telegram guruh ID" hint="(masalan -1001234567890)" error={errors.telegram_chat_id}><Input value={f.telegram_chat_id ?? ''} onChange={e => set('telegram_chat_id', e.target.value)} placeholder="-100..." /></Field>
                 </div>
             </div>
             <div className="mt-5">
@@ -91,8 +92,8 @@ export function GroupShow() {
             <div className="card">
                 <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between"><h3 className="text-sm font-semibold text-gray-900">Studentlar</h3><span className="text-xs text-gray-400">{g.students.length} ta</span></div>
                 <table className="min-w-full">
-                    <thead className="border-b border-gray-200"><tr><Th>To‘liq ism</Th><Th>Telefon</Th><Th>Yaratilgan sana</Th></tr></thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <THead><Th>To‘liq ism</Th><Th>Telefon</Th><Th>Yaratilgan sana</Th></THead>
+                    <tbody className="table-body">
                         {g.students.length ? g.students.map(s => (
                             <tr key={s.id} className="hover:bg-gray-50">
                                 <Td className="font-medium text-gray-900">{can('show_student') ? <Link to={`/admin/students/${s.id}`} className="hover:text-blue-600">{s.name}</Link> : s.name}</Td>

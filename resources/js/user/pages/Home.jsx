@@ -1,5 +1,9 @@
+import HomeworkBanner from '../components/HomeworkBanner';
+
 export default function Home() {
     return (
+        <>
+        <HomeworkBanner />
         <div className="flex-1 flex items-center justify-center p-6">
             <div className="w-full max-w-lg rounded-2xl bg-white p-8 text-gray-900 shadow-2xl">
                 <h1 className="text-3xl font-extrabold text-center">Tezkor Imtihon</h1>
@@ -13,5 +17,6 @@ export default function Home() {
                 </div>
             </div>
         </div>
+        </>
     );
 }
