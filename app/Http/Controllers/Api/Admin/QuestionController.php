@@ -27,7 +27,7 @@ class QuestionController extends ApiController
 
     public function themes()
     {
-        return Theme::select('id')->titled()->orderBy('title')->get();
+        return Theme::select('id')->titled()->ordered()->get();
     }
 
     public function languages()

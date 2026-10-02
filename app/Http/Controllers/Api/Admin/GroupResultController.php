@@ -144,7 +144,7 @@ class GroupResultController extends ApiController
             ->selectRaw('theme_id, count(*) attempts, sum(correct) correct, sum(in_correct) in_correct, count(distinct user_id) students')
             ->groupBy('theme_id')->get()->keyBy('theme_id');
 
-        $themes = Theme::orderBy('title')->get(['id', 'title', 'title_krill', 'icon_type', 'icon'])->map(function ($t) use ($taskAgg, $hwAgg, $resAgg) {
+        $themes = Theme::ordered()->get(['id', 'title', 'title_krill', 'icon_type', 'icon'])->map(function ($t) use ($taskAgg, $hwAgg, $resAgg) {
             $ta = $taskAgg[$t->id] ?? null; $ha = $hwAgg[$t->id] ?? null; $ra = $resAgg[$t->id] ?? null;
             $c = (int) ($ra->correct ?? 0); $ic = (int) ($ra->in_correct ?? 0);
 

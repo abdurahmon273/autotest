@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Models\Theme;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Support\Lang;
 use Illuminate\Validation\Rule;
@@ -21,8 +23,26 @@ class ThemeController extends ApiController
         return Theme::withInactive()->withCount('questions')
             ->when($request->filled('status'), fn ($q) => $q->where('status', (int) $request->status))
             ->when($request->search, fn ($q, $s) => $q->where(fn ($q) => $q->where('title', 'like', "%{$s}%")->orWhere('title_krill', 'like', "%{$s}%")))
-            ->latest('id')
+            ->ordered()
             ->paginate(15);
+    }
+
+    /** Qo'lda tartiblash: berilgan id lar ketma-ketligi bo'yicha order_id qayta taqsimlanadi (faqat shu id lar orasida). */
+    public function reorder(Request $request)
+    {
+        $this->can('update_theme');
+        $ids = $request->validate(['ids' => ['required', 'array', 'min:2'], 'ids.*' => ['integer', 'distinct']])['ids'];
+
+        DB::transaction(function () use ($ids) {
+            $slots = Theme::withInactive()->whereIn('id', $ids)->orderBy('order_id')->orderBy('id')->pluck('order_id')->values();
+            abort_if($slots->count() !== count($ids), 422, 'Mavzular topilmadi.');
+            foreach ($ids as $i => $id) {
+                Theme::withInactive()->whereKey($id)->update(['order_id' => $slots[$i]]);
+            }
+        });
+        Cache::flush();
+
+        return $this->ok('Tartib saqlandi.');
     }
 
     public function languages()
@@ -35,7 +55,7 @@ class ThemeController extends ApiController
         return Theme::select('id', 'title', 'icon')
             ->whereNotIn('id', (array) $request->input('exclude', []))
             ->when($request->search, fn ($q, $s) => $q->where(fn ($q) => $q->where('themes.title', 'like', "%{$s}%")->orWhere('title_krill', 'like', "%{$s}%")))
-            ->orderBy('title')
+            ->ordered()
             ->limit(10)
             ->get();
     }
@@ -44,7 +64,7 @@ class ThemeController extends ApiController
     {
         $this->can('create_theme');
         $data = $this->validated($request);
-        $theme = Theme::create(['title' => ($data['title'] ?? null) ?: null, 'title_krill' => ($data['title_krill'] ?? null) ?: null, 'icon_type' => $data['icon_type'], 'icon' => $this->icon($request, $data)]);
+        $theme = Theme::create(['title' => ($data['title'] ?? null) ?: null, 'title_krill' => ($data['title_krill'] ?? null) ?: null, 'icon_type' => $data['icon_type'], 'icon' => $this->icon($request, $data), 'order_id' => (int) Theme::withInactive()->max('order_id') + 1]);
 
         return $this->ok('Saqlandi.', ['id' => $theme->id]);
     }

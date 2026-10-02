@@ -39,7 +39,7 @@ class QuizController extends Controller
     {
         return Theme::select('id', 'icon_type', 'icon')
             ->titled(Lang::pick($request->lang))
-            ->orderBy('id')
+            ->ordered()
             ->get();
     }
 

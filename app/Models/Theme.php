@@ -33,6 +33,7 @@ class Theme extends Model
         'icon_type',
         'icon',
         'status',
+        'order_id',
     ];
 
     protected $casts = ['status' => 'integer'];
@@ -44,6 +45,11 @@ class Theme extends Model
     protected static function booted(): void
     {
         static::addGlobalScope('active', fn (Builder $q) => $q->where('themes.status', self::STATUS_ACTIVE));
+    }
+
+    public function scopeOrdered(Builder $q): Builder
+    {
+        return $q->orderBy('themes.order_id')->orderBy('themes.id');
     }
 
     public static function withInactive(): Builder

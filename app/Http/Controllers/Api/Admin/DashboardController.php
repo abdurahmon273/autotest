@@ -96,7 +96,7 @@ class DashboardController extends ApiController
             ->groupBy('theme_id')
             ->pluck('groups_count', 'theme_id');
 
-        $themes = Theme::orderBy('id')->get(['id', 'title', 'title_krill'])->map(fn ($t) => [
+        $themes = Theme::ordered()->get(['id', 'title', 'title_krill'])->map(fn ($t) => [
             'id' => $t->id,
             'title' => $t->title ?? $t->title_krill,
             'groups' => (int) ($perTheme[$t->id] ?? 0),

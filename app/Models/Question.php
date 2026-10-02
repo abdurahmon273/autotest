@@ -38,7 +38,7 @@ class Question extends Model
 
     public function themes(): BelongsToMany
     {
-        return $this->belongsToMany(Theme::class);
+        return $this->belongsToMany(Theme::class)->orderBy('themes.order_id');
     }
 
     public function getImageUrlAttribute(): ?string

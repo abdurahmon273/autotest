@@ -176,7 +176,7 @@ class TaskController extends ApiController
             ->select('id', 'title', 'title_krill', 'icon_type', 'icon')
             ->withCount('questions')
             ->when($request->search, fn ($q, $s) => $q->where(fn ($q) => $q->where('title', 'like', "%{$s}%")->orWhere('title_krill', 'like', "%{$s}%")))
-            ->orderBy('title')
+            ->ordered()
             ->limit(10)
             ->get();
     }

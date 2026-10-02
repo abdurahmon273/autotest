@@ -76,7 +76,7 @@ class OsonpravaSeeder extends Seeder
             Theme::query()->update(['deleted_at' => $now]);
 
             // 2. Default mavzu: mavjud barcha savollar shu yerga
-            $default = Theme::create(['title' => 'Default', 'title_krill' => 'Default', 'icon_type' => Theme::ICON_TEXT, 'icon' => '📦']);
+            $default = Theme::create(['title' => 'Default', 'title_krill' => 'Default', 'icon_type' => Theme::ICON_TEXT, 'icon' => '📦', 'order_id' => count(self::THEMES) + 1]);
             DB::table('question_theme')->delete();
             $existing = Question::pluck('id');
             foreach ($existing->chunk(500) as $chunk) {
@@ -85,8 +85,9 @@ class OsonpravaSeeder extends Seeder
 
             // 3. Yangi 16 ta mavzu
             $themeIds = [];
+            $order = 1;
             foreach (self::THEMES as $key => [$title, $krill, $icon]) {
-                $themeIds[$key] = Theme::create(['title' => $title, 'title_krill' => $krill, 'icon_type' => Theme::ICON_TEXT, 'icon' => $icon])->id;
+                $themeIds[$key] = Theme::create(['title' => $title, 'title_krill' => $krill, 'icon_type' => Theme::ICON_TEXT, 'icon' => $icon, 'order_id' => $order++])->id;
             }
 
             // 4. Yangi savollar

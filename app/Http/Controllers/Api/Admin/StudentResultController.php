@@ -188,7 +188,7 @@ class StudentResultController extends ApiController
             ->selectRaw('tasks.theme_id, count(*) tasks_count, sum(homeworks.status = 2) hw_passed, sum(homeworks.status = 0) hw_failed, sum(homeworks.status = 1) hw_progress')
             ->groupBy('tasks.theme_id')->get()->keyBy('theme_id');
 
-        $rows = Theme::withTrashed()->orderBy('title')->get(['id', 'title', 'title_krill', 'icon_type', 'icon', 'deleted_at'])->map(function ($t) use ($agg, $hw) {
+        $rows = Theme::withTrashed()->ordered()->get(['id', 'title', 'title_krill', 'icon_type', 'icon', 'deleted_at'])->map(function ($t) use ($agg, $hw) {
             $a = $agg[$t->id] ?? null; $h = $hw[$t->id] ?? null;
             $c = (int) ($a->correct ?? 0); $ic = (int) ($a->in_correct ?? 0);
 
@@ -237,7 +237,7 @@ class StudentResultController extends ApiController
 
         return [
             'groups' => Group::orderBy('name')->get(['id', 'name']),
-            'themes' => Theme::orderBy('title')->get(['id', 'title', 'title_krill', 'icon_type', 'icon']),
+            'themes' => Theme::ordered()->get(['id', 'title', 'title_krill', 'icon_type', 'icon']),
         ];
     }
 }

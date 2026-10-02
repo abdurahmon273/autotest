@@ -56,7 +56,7 @@ class StudentReportController extends ApiController
         $byTheme = $finished()->where('type', QuizEnum::TOPIC)->whereNotNull('theme_id')
             ->selectRaw('theme_id, count(*) attempts, sum(correct) correct, sum(in_correct) in_correct, max(created_at) last_at')
             ->groupBy('theme_id')->get()->keyBy('theme_id');
-        $allThemes = Theme::orderBy('title')->get(['id', 'title', 'title_krill', 'icon_type', 'icon']);
+        $allThemes = Theme::ordered()->get(['id', 'title', 'title_krill', 'icon_type', 'icon']);
         $themes = $allThemes->keyBy('id');
         $themesTotal = $allThemes->count();
 

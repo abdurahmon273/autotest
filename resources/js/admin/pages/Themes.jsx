@@ -1,14 +1,14 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Eye, EyeOff, Image, Plus, X } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Eye, EyeOff, GripVertical, Image, LoaderCircle, Plus, X } from 'lucide-react';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { messageOf } from '../api';
 import { useToast } from '../lib/toast';
 import { useAuth } from '../lib/auth';
-import { useDebounce, useDelete, useItem, useList, useSave } from '../lib/hooks';
-import { Actions, Badge, Field, Input, PageHeader, SaveButton, SearchInput, Table, Th, Td } from '../components/ui';
+import { useDebounce, useDelete, useItem, useSave } from '../lib/hooks';
+import { Actions, Badge, Empty, Field, Input, PageHeader, SaveButton, SearchInput, SkeletonRows, Th, THead, Td } from '../components/ui';
 import ThemeLabel from '../components/ThemeLabel';
-import { fmtDate } from '../lib/utils';
+import { cx } from '../lib/utils';
 
 export const IMAGE_ACCEPT = '.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg';
 const MIMES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/svg+xml'];
@@ -17,32 +17,81 @@ export const checkImage = f => (f && !MIMES.includes(f.type) ? 'Rasm formati qo�
 export function ThemesIndex() {
     const { can } = useAuth();
     const [search, setSearch] = useState('');
-    const [page, setPage] = useState(1);
     const [status, setStatus] = useState('');
     const q = useDebounce(search);
-    const { data, isFetching } = useList('/themes', { search: q, status, page });
     const del = useDelete('/themes');
     const qc = useQueryClient();
     const toast = useToast();
+    const sentinel = useRef(null);
+    const [drag, setDrag] = useState(null); // sudralayotgan id
+    const [over, setOver] = useState(null); // ustida turgan id
+    const [local, setLocal] = useState(null); // optimistik tartib
+
+    const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteQuery({
+        queryKey: ['/themes', { search: q, status }],
+        queryFn: ({ pageParam = 1 }) => api.get('/themes', { params: { search: q, status, page: pageParam } }).then(r => r.data),
+        getNextPageParam: last => (last.current_page < last.last_page ? last.current_page + 1 : undefined),
+        initialPageParam: 1,
+        placeholderData: p => p,
+    });
+    const rows = local ?? data?.pages.flatMap(p => p.data) ?? [];
+    const total = data?.pages[0]?.total ?? 0;
+    useEffect(() => { setLocal(null); }, [data]);
+    useEffect(() => {
+        if (!sentinel.current || !hasNextPage) return;
+        const io = new IntersectionObserver(([e]) => e.isIntersecting && !isFetchingNextPage && fetchNextPage(), { rootMargin: '200px' });
+        io.observe(sentinel.current);
+        return () => io.disconnect();
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage, rows.length]);
+
     const toggle = useMutation({ mutationFn: id => api.patch(`/themes/${id}/toggle`).then(r => r.data), onSuccess: d => { toast(d.message); qc.invalidateQueries({ queryKey: ['/themes'] }); }, onError: e => toast(messageOf(e), 'error') });
+    const reorder = useMutation({
+        mutationFn: ids => api.put('/themes/reorder', { ids }).then(r => r.data),
+        onSuccess: d => { toast(d.message); qc.invalidateQueries({ queryKey: ['/themes'] }); qc.invalidateQueries({ queryKey: ['/questions/themes'] }); },
+        onError: e => { toast(messageOf(e), 'error'); setLocal(null); },
+    });
+    const canDrag = can('update_theme') && !q && status === '';
+
+    const onDrop = targetId => {
+        if (drag === null || drag === targetId) { setDrag(null); setOver(null); return; }
+        const list = [...rows];
+        const from = list.findIndex(t => t.id === drag), to = list.findIndex(t => t.id === targetId);
+        const [item] = list.splice(from, 1);
+        list.splice(to, 0, item);
+        setLocal(list); setDrag(null); setOver(null);
+        reorder.mutate(list.map(t => t.id));
+    };
 
     return (
         <>
             <PageHeader title="Mavzular">
-                <SearchInput value={search} onChange={v => { setSearch(v); setPage(1); }} placeholder="Mavzu qidirish..." />
-                <select value={status} onChange={e => { setStatus(e.target.value); setPage(1); }} className="form-input !w-40 shrink-0"><option value="">Barchasi</option><option value="1">Faol</option><option value="0">Yashirin</option></select>
+                <SearchInput value={search} onChange={setSearch} placeholder="Mavzu qidirish..." />
+                <select value={status} onChange={e => setStatus(e.target.value)} className="form-input !w-40 shrink-0"><option value="">Barchasi</option><option value="1">Faol</option><option value="0">Yashirin</option></select>
                 {can('create_theme') && <Link to="/admin/themes/create" className="btn-primary"><Plus className="w-4 h-4" /> Qo‘shish</Link>}
             </PageHeader>
-            <Table cols={7} loading={isFetching && !data} rows={data?.data} meta={data} onPage={setPage}
-                head={<><Th className="w-12">#</Th><Th>Mavzu (lotin)</Th><Th>Mavzu (krill)</Th><Th>Savollar</Th><Th>Holat</Th><Th>Yaratilgan sana</Th><Th className="text-right">Amallar</Th></>}
-                render={t => (
-                    <tr key={t.id} className="hover:bg-gray-50">
-                        <Td className="text-gray-400">{t.id}</Td><Td className="font-medium text-gray-900"><ThemeLabel theme={t} /></Td><Td className="text-gray-700">{t.title_krill ?? '—'}</Td><Td>{t.questions_count}</Td><Td>{t.status ? <Badge color="green">Faol</Badge> : <Badge color="gray">Yashirin</Badge>}</Td><Td className="text-gray-500">{fmtDate(t.created_at)}</Td>
-                        <Td><Actions edit={can('update_theme') && `/admin/themes/${t.id}/edit`}
-                            extra={can('update_theme') && <button type="button" onClick={() => toggle.mutate(t.id)} disabled={toggle.isPending} title={t.status ? 'Yashirish' : 'Faollashtirish'} className={t.status ? 'icon-btn text-green-600 hover:bg-green-50' : 'icon-btn text-gray-400 hover:text-gray-700 hover:bg-gray-100'}>{t.status ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}</button>}
-                            onDelete={can('delete_theme') && (() => del(`/themes/${t.id}`, `${t.title ?? t.title_krill} o‘chirilsinmi?`))} /></Td>
-                    </tr>
-                )} />
+            {canDrag && <p className="mb-3 text-sm text-gray-500 flex items-center gap-1.5"><GripVertical className="w-4 h-4" /> Qatorlarni sudrab tartibni o‘zgartiring. Bu tartib menyuda va barcha ro‘yxatlarda ishlatiladi.</p>}
+            <div className="card overflow-hidden">
+                <div className="overflow-x-auto"><table className="min-w-full">
+                    <THead>{canDrag && <Th className="w-10" />}<Th className="w-12">#</Th><Th>Mavzu (lotin)</Th><Th>Mavzu (krill)</Th><Th>Savollar</Th><Th>Holat</Th><Th className="text-right">Amallar</Th></THead>
+                    <tbody className="table-body">
+                        {isLoading ? <SkeletonRows cols={canDrag ? 7 : 6} /> : rows.length ? rows.map((t, i) => (
+                            <tr key={t.id} draggable={canDrag} onDragStart={() => setDrag(t.id)} onDragOver={e => { if (canDrag) { e.preventDefault(); setOver(t.id); } }} onDragLeave={() => setOver(null)} onDrop={() => onDrop(t.id)} onDragEnd={() => { setDrag(null); setOver(null); }}
+                                className={cx(drag === t.id && 'opacity-40', over === t.id && drag !== t.id && 'bg-blue-50 border-t-2 border-admin-primary', canDrag && 'cursor-grab active:cursor-grabbing')}>
+                                {canDrag && <Td className="text-gray-300"><GripVertical className="w-4 h-4" /></Td>}
+                                <Td className="text-gray-400">{i + 1}</Td>
+                                <Td className="font-medium text-gray-900"><ThemeLabel theme={t} /></Td>
+                                <Td className="text-gray-700">{t.title_krill ?? '—'}</Td>
+                                <Td>{t.questions_count}</Td>
+                                <Td>{t.status ? <Badge color="green">Faol</Badge> : <Badge color="gray">Yashirin</Badge>}</Td>
+                                <Td><Actions edit={can('update_theme') && `/admin/themes/${t.id}/edit`}
+                                    extra={can('update_theme') && <button type="button" onClick={() => toggle.mutate(t.id)} disabled={toggle.isPending} title={t.status ? 'Yashirish' : 'Faollashtirish'} className={t.status ? 'icon-btn text-green-600 hover:bg-green-50' : 'icon-btn text-gray-400 hover:text-gray-700 hover:bg-gray-100'}>{t.status ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}</button>}
+                                    onDelete={can('delete_theme') && (() => del(`/themes/${t.id}`, `${t.title ?? t.title_krill} o‘chirilsinmi?`))} /></Td>
+                            </tr>
+                        )) : <Empty colSpan={7} />}
+                    </tbody>
+                </table></div>
+                <div ref={sentinel} className="h-10 flex items-center justify-center text-xs text-gray-400 border-t border-gray-100">{isFetchingNextPage ? <LoaderCircle className="w-4 h-4 animate-spin" /> : rows.length ? `${rows.length} / ${total}` : ''}</div>
+            </div>
         </>
     );
 }

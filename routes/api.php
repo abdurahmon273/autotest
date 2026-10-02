@@ -75,6 +75,7 @@ Route::prefix('admin')->group(function () {
 
         Route::get('themes/search', [ThemeController::class, 'search']);
         Route::get('themes/languages', [ThemeController::class, 'languages']);
+        Route::put('themes/reorder', [ThemeController::class, 'reorder']);
         Route::patch('themes/{theme}/toggle', [ThemeController::class, 'toggle']);
         Route::apiResource('themes', ThemeController::class);
 
