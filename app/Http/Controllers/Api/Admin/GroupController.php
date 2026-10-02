@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Http\Middleware\EnsureUser;
 use App\Http\Requests\Admin\GroupRequest;
 use App\Models\Group;
 use App\Models\Role;
@@ -35,6 +36,7 @@ class GroupController extends ApiController
         $this->can('create_group');
         $group = Group::create($request->safe()->only('name', 'description', 'telegram_chat_id'));
         $group->students()->sync($request->input('students', []));
+        EnsureUser::flush($request->input('students', []));
 
         return $this->ok('Saqlandi.', ['id' => $group->id]);
     }
@@ -58,6 +60,7 @@ class GroupController extends ApiController
     public function destroy(Group $group)
     {
         $this->can('delete_group');
+        EnsureUser::flush($group->students()->pluck('users.id'));
         $group->delete();
 
         return $this->ok('O‘chirildi.');
@@ -84,6 +87,7 @@ class GroupController extends ApiController
         $ids = $request->validate(['ids' => ['required', 'array', 'min:1'], 'ids.*' => ['integer']])['ids'];
         $ids = User::withRole(Role::STUDENT)->whereIn('id', $ids)->pluck('id')->all();
         $group->students()->syncWithoutDetaching($ids);
+        EnsureUser::flush($ids);
         app(HomeworkService::class)->createForStudents($group, $ids);
 
         return $this->ok(count($ids).' ta student qo‘shildi.');
@@ -93,6 +97,7 @@ class GroupController extends ApiController
     {
         $this->can('update_group');
         $group->students()->detach($user);
+        EnsureUser::flush($user);
 
         return $this->ok('Chiqarildi.');
     }

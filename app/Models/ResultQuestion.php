@@ -17,6 +17,8 @@ class ResultQuestion extends Model
         'status',
         'is_last',
         'order',
+        'time',
+        'timing_status',
     ];
 
     protected function casts(): array

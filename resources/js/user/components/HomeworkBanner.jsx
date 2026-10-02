@@ -5,10 +5,10 @@ import api from '../api';
 import { useLang } from '../lib';
 
 /** Faol uyga vazifalar: navbar ostida ixcham, katta yozuvli kartalar. Vazifa bo'lmasa hech narsa chiqmaydi. */
-export default function HomeworkBanner({ themeId }) {
+export default function HomeworkBanner({ themeId, enabled = true }) {
     const nav = useNavigate();
     const { key } = useLang();
-    const { data } = useQuery({ queryKey: ['homeworks', key], queryFn: () => api.get('/homeworks', { params: { lang: key } }).then(r => r.data), staleTime: 30_000 });
+    const { data } = useQuery({ queryKey: ['homeworks', key], queryFn: () => api.get('/homeworks', { params: { lang: key } }).then(r => r.data), enabled, staleTime: 60_000 });
     if (!data?.length) return null;
 
     return (

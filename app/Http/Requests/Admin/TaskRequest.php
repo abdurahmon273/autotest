@@ -22,7 +22,7 @@ class TaskRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'theme_id' => ['required', 'integer', Rule::exists('themes', 'id')->whereNull('deleted_at')],
+            'theme_id' => ['required', 'integer', Rule::exists('themes', 'id')->whereNull('deleted_at')->where('status', 1)],
             'group_id' => [$task ? 'sometimes' : 'required', 'integer', Rule::exists('groups', 'id')->whereNull('deleted_at')],
             'min_test_count' => ['required', 'integer', 'min:1', 'max:1000'],
             'passing_percentage' => ['required', 'integer', 'min:1', 'max:100'],

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
-import { Activity, BarChart3, BookOpen, ClipboardList, Cog, Home, UserCheck, Briefcase, ChevronDown, CircleHelp, FileQuestion, GraduationCap, KeyRound, LayoutDashboard, Layers, LogOut, Menu, Send, Settings, ShieldCheck, User, UserCog, Users } from 'lucide-react';
+import { Activity, BarChart3, BookOpen, ClipboardList, Cog, Dices, Home, UserCheck, Briefcase, ChevronDown, CircleHelp, FileQuestion, GraduationCap, KeyRound, LayoutDashboard, Layers, LogOut, Menu, Send, Settings, ShieldCheck, User, UserCog, Users } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { Avatar } from './ui';
 import { cx } from '../lib/utils';
@@ -11,9 +11,9 @@ const MAIN = [
     ['access_dashboard', '/admin', LayoutDashboard, 'Dashboard', true],
     ['access_teacher', '/admin/teachers', GraduationCap, 'Ustozlar'],
     ['access_student', '/admin/students', Users, 'Studentlar'],
-    ['access_student', '/admin/results/students', UserCheck, 'O‘quvchi natijalari'],
-    ['access_student', '/admin/results/themes', BarChart3, 'Bo‘lim bo‘yicha natijalar'],
-    ['access_student', '/admin/results/by-student', ClipboardList, 'O‘quvchi bo‘yicha natijalar'],
+    ['access_student', '/admin/results/students', UserCheck, 'O‘quvchilar natijalari'],
+    ['access_group', '/admin/results/groups', BarChart3, 'Guruhlar bo‘yicha natijalar'],
+    ['access_student', '/admin/results/by-student', ClipboardList, 'O‘quvchi hisoboti'],
 ];
 const STUDY = [
     ['access_group', '/admin/groups', Layers, 'Guruhlar'],
@@ -32,6 +32,7 @@ const SETTINGS = [
     ['access_staff', '/admin/staff', Briefcase, 'Hodimlar'],
     ['access_telegram_setting', '/admin/settings/telegram', Send, 'Telegram sozlamalari'],
     ['access_general_setting', '/admin/settings/general', Cog, 'Umumiy sozlamalar'],
+    ['access_random_logic', '/admin/settings/random-logic', Dices, 'Random logika'],
 ];
 
 const Nav = ({ items, can, onClick }) => (

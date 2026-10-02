@@ -1,9 +1,12 @@
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Image, Plus, X } from 'lucide-react';
+import { Eye, EyeOff, Image, Plus, X } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import api, { messageOf } from '../api';
+import { useToast } from '../lib/toast';
 import { useAuth } from '../lib/auth';
 import { useDebounce, useDelete, useItem, useList, useSave } from '../lib/hooks';
-import { Actions, Field, Input, PageHeader, SaveButton, SearchInput, Table, Th, Td } from '../components/ui';
+import { Actions, Badge, Field, Input, PageHeader, SaveButton, SearchInput, Table, Th, Td } from '../components/ui';
 import ThemeLabel from '../components/ThemeLabel';
 import { fmtDate } from '../lib/utils';
 
@@ -15,22 +18,29 @@ export function ThemesIndex() {
     const { can } = useAuth();
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
+    const [status, setStatus] = useState('');
     const q = useDebounce(search);
-    const { data, isFetching } = useList('/themes', { search: q, page });
+    const { data, isFetching } = useList('/themes', { search: q, status, page });
     const del = useDelete('/themes');
+    const qc = useQueryClient();
+    const toast = useToast();
+    const toggle = useMutation({ mutationFn: id => api.patch(`/themes/${id}/toggle`).then(r => r.data), onSuccess: d => { toast(d.message); qc.invalidateQueries({ queryKey: ['/themes'] }); }, onError: e => toast(messageOf(e), 'error') });
 
     return (
         <>
             <PageHeader title="Mavzular">
                 <SearchInput value={search} onChange={v => { setSearch(v); setPage(1); }} placeholder="Mavzu qidirish..." />
+                <select value={status} onChange={e => { setStatus(e.target.value); setPage(1); }} className="form-input !w-40 shrink-0"><option value="">Barchasi</option><option value="1">Faol</option><option value="0">Yashirin</option></select>
                 {can('create_theme') && <Link to="/admin/themes/create" className="btn-primary"><Plus className="w-4 h-4" /> Qo‘shish</Link>}
             </PageHeader>
-            <Table cols={6} loading={isFetching && !data} rows={data?.data} meta={data} onPage={setPage}
-                head={<><Th className="w-12">#</Th><Th>Mavzu (lotin)</Th><Th>Mavzu (krill)</Th><Th>Savollar</Th><Th>Yaratilgan sana</Th><Th className="text-right">Amallar</Th></>}
+            <Table cols={7} loading={isFetching && !data} rows={data?.data} meta={data} onPage={setPage}
+                head={<><Th className="w-12">#</Th><Th>Mavzu (lotin)</Th><Th>Mavzu (krill)</Th><Th>Savollar</Th><Th>Holat</Th><Th>Yaratilgan sana</Th><Th className="text-right">Amallar</Th></>}
                 render={t => (
                     <tr key={t.id} className="hover:bg-gray-50">
-                        <Td className="text-gray-400">{t.id}</Td><Td className="font-medium text-gray-900"><ThemeLabel theme={t} /></Td><Td className="text-gray-700">{t.title_krill ?? '—'}</Td><Td>{t.questions_count}</Td><Td className="text-gray-500">{fmtDate(t.created_at)}</Td>
-                        <Td><Actions edit={can('update_theme') && `/admin/themes/${t.id}/edit`} onDelete={can('delete_theme') && (() => del(`/themes/${t.id}`, `${t.title ?? t.title_krill} o‘chirilsinmi?`))} /></Td>
+                        <Td className="text-gray-400">{t.id}</Td><Td className="font-medium text-gray-900"><ThemeLabel theme={t} /></Td><Td className="text-gray-700">{t.title_krill ?? '—'}</Td><Td>{t.questions_count}</Td><Td>{t.status ? <Badge color="green">Faol</Badge> : <Badge color="gray">Yashirin</Badge>}</Td><Td className="text-gray-500">{fmtDate(t.created_at)}</Td>
+                        <Td><Actions edit={can('update_theme') && `/admin/themes/${t.id}/edit`}
+                            extra={can('update_theme') && <button type="button" onClick={() => toggle.mutate(t.id)} disabled={toggle.isPending} title={t.status ? 'Yashirish' : 'Faollashtirish'} className={t.status ? 'icon-btn text-green-600 hover:bg-green-50' : 'icon-btn text-gray-400 hover:text-gray-700 hover:bg-gray-100'}>{t.status ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}</button>}
+                            onDelete={can('delete_theme') && (() => del(`/themes/${t.id}`, `${t.title ?? t.title_krill} o‘chirilsinmi?`))} /></Td>
                     </tr>
                 )} />
         </>

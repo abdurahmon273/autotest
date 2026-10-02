@@ -69,7 +69,7 @@ class TaskController extends ApiController
     {
         $this->can('show_task');
 
-        $task->load(['theme:id,title,title_krill,icon_type,icon', 'group:id,name'])->loadCount('homeworks');
+        $task->load(['theme' => fn ($q) => $q->select('id', 'title', 'title_krill', 'icon_type', 'icon')->withCount('questions'), 'group:id,name'])->loadCount('homeworks');
 
         $byStatus = $task->homeworks()->selectRaw('status, count(*) as c')->groupBy('status')->pluck('c', 'status');
 
@@ -174,6 +174,7 @@ class TaskController extends ApiController
 
         return Theme::query()
             ->select('id', 'title', 'title_krill', 'icon_type', 'icon')
+            ->withCount('questions')
             ->when($request->search, fn ($q, $s) => $q->where(fn ($q) => $q->where('title', 'like', "%{$s}%")->orWhere('title_krill', 'like', "%{$s}%")))
             ->orderBy('title')
             ->limit(10)

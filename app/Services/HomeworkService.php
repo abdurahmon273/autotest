@@ -73,6 +73,7 @@ class HomeworkService
         return static::activeTasks()
             ->join('homeworks', 'homeworks.task_id', '=', 'tasks.id')
             ->join('themes', 'themes.id', '=', 'tasks.theme_id')
+            ->where('themes.status', 1)->whereNull('themes.deleted_at')
             ->where('homeworks.user_id', $user->id)
             ->orderByDesc('tasks.id')
             ->get([

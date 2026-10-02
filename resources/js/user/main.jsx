@@ -6,6 +6,7 @@ import { LangProvider } from './lib';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Theme from './pages/Theme';
+import Exam from './pages/Exam';
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } } });
 
@@ -18,6 +19,7 @@ createRoot(document.getElementById('app')).render(
                     <Route path="/app" element={<Layout />}>
                         <Route index element={<Home />} />
                         <Route path="theme/:id" element={<Theme />} />
+                        <Route path="exam/:type" element={<Exam />} />
                         <Route path="*" element={<Navigate to="/app" replace />} />
                     </Route>
                 </Routes>

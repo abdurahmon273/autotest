@@ -20,7 +20,7 @@ export default function Theme() {
 
     return (
         <>
-        <HomeworkBanner themeId={id} />
+        <HomeworkBanner themeId={id} enabled={!!data} />
         <div className="flex-1 flex items-center justify-center p-6">
             <div className="w-full max-w-lg rounded-2xl bg-white overflow-hidden text-gray-900 shadow-2xl">
                 <div className="bg-gradient-to-r from-[#0f2a5c] to-[#3b5bdb] px-8 py-10 text-white">

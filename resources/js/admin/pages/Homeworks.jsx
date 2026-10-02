@@ -6,7 +6,7 @@ import api, { messageOf } from '../api';
 import { useToast } from '../lib/toast';
 import { useAuth } from '../lib/auth';
 import { useDebounce, useDelete, useItem, useSave } from '../lib/hooks';
-import { Actions, Avatar, BackLink, Badge, Empty, Field, Input, PageHeader, SaveButton, SearchInput, SkeletonBlock, Td, Th, THead } from '../components/ui';
+import { Actions, Avatar, Badge, Empty, Field, Input, PageHeader, SaveButton, SearchInput, SkeletonBlock, Td, Th, THead } from '../components/ui';
 import DateTimePicker from '../components/DateTimePicker';
 import ThemeLabel from '../components/ThemeLabel';
 import { cx, fmtDate, fmtPhone } from '../lib/utils';
@@ -189,12 +189,12 @@ function ThemePick({ value, onChange, error }) {
             {open || !value ? (
                 <div className="relative">
                     <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input ref={input} value={search} onChange={e => { setSearch(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} placeholder={value ? `${themeTitle(value)} — boshqasini qidiring...` : 'Bo‘lim qidiring...'} className={cx('form-input pl-9 pr-9', error && 'border-red-300')} />
+                    <input ref={input} value={search} onChange={e => { setSearch(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (data?.length === 1) choose(data[0]); } }} placeholder={value ? `${themeTitle(value)} — boshqasini qidiring...` : 'Bo‘lim qidiring...'} className={cx('form-input pl-9 pr-9', error && 'border-red-300')} />
                     {value && <button type="button" onClick={() => choose(null)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700" title="Tozalash"><X className="w-4 h-4" /></button>}
                 </div>
             ) : (
                 <div onClick={start} className={cx('form-input flex items-center justify-between gap-2 cursor-pointer hover:border-gray-300', error && 'border-red-300')}>
-                    <ThemeLabel theme={value} />
+                    <span className="flex items-center gap-2 min-w-0"><ThemeLabel theme={value} /><span className="text-xs text-gray-400 shrink-0">({value.questions_count ?? 0})</span></span>
                     <button type="button" onClick={e => { e.stopPropagation(); choose(null); }} className="text-gray-400 hover:text-gray-700" title="Tozalash"><X className="w-4 h-4" /></button>
                 </div>
             )}
@@ -202,7 +202,7 @@ function ThemePick({ value, onChange, error }) {
                 <div className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden">
                     {isFetching && !data ? <div className="p-3 space-y-2 animate-pulse">{[0, 1, 2].map(i => <div key={i} className="h-3.5 rounded bg-gray-200 w-2/3" />)}</div>
                         : <div className="max-h-64 overflow-y-auto">
-                            {data?.length ? data.map(t => <button key={t.id} type="button" onClick={() => choose(t)} className={cx('w-full px-3 py-2 text-sm text-left hover:bg-gray-50', value?.id === t.id ? 'bg-blue-50 text-blue-700' : 'text-gray-800')}><ThemeLabel theme={t} /></button>)
+                            {data?.length ? data.map(t => <button key={t.id} type="button" onClick={() => choose(t)} className={cx('w-full px-3 py-2 text-sm text-left hover:bg-gray-50 flex items-center justify-between gap-2', value?.id === t.id ? 'bg-blue-50 text-blue-700' : 'text-gray-800')}><ThemeLabel theme={t} /><span className="text-xs text-gray-400 shrink-0">({t.questions_count ?? 0})</span></button>)
                                 : <p className="px-3 py-2 text-sm text-gray-400">Topilmadi</p>}
                         </div>}
                 </div>
@@ -262,10 +262,13 @@ export function HomeworkForm() {
 
     return (
         <form onSubmit={submit} noValidate>
-            <PageHeader title={id ? 'Uyga vazifani tahrirlash' : 'Yangi uyga vazifa yaratish'}>
-                <BackLink to={id ? `${listPath}/${id}` : listPath} />
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
+                <div className="flex items-center gap-3 min-w-0">
+                    <Link to={id ? `${listPath}/${id}` : listPath} className="text-gray-400 hover:text-gray-700 transition-colors" title="Orqaga"><ArrowLeft className="w-6 h-6" /></Link>
+                    <h1 className="text-2xl font-bold text-gray-900 truncate">{id ? 'Uyga vazifani tahrirlash' : 'Yangi uyga vazifa yaratish'}</h1>
+                </div>
                 <SaveButton saving={saving} />
-            </PageHeader>
+            </div>
             <div className="mb-5 flex items-center gap-2 text-sm text-gray-500">
                 <Layers className="w-4 h-4" /> Guruh: <span className="font-semibold text-gray-900">{group?.name ?? '…'}</span>
                 {group?.description && <span className="text-gray-400">· {group.description}</span>}

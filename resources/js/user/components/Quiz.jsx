@@ -17,8 +17,10 @@ export default function Quiz({ data, onRestart, restarting }) {
     const [saved, setSaved] = useState(null);
     const qc = useQueryClient();
     const tipsRef = useRef(null);
+    const waitRef = useRef(null);
+    const [waiting, setWaiting] = useState(false);
     const username = document.getElementById('app').dataset.user;
-    const { langs, key, set: setLang } = useLang();
+    const { langs, key, set: setLang, multi } = useLang();
     const [texts, setTexts] = useState(() => ({ [data.lang]: Object.fromEntries(data.questions.map(x => [x.id, x])) }));
     const [loadingLang, setLoadingLang] = useState(false);
 
@@ -35,6 +37,9 @@ export default function Quiz({ data, onRestart, restarting }) {
         return () => window.removeEventListener('beforeunload', h);
     }, [q.status]);
     useEffect(() => { setPicked(null); setTips(false); }, [idx]);
+    useEffect(() => () => clearTimeout(waitRef.current), []);
+    // Standart rasm bitta: birinchi savoldan oldin keshga olib qo'yamiz, keyingi savollarda darhol chiqadi
+    useEffect(() => { if (data.default_image) { const im = new Image(); im.src = data.default_image; } }, [data.default_image]);
     useEffect(() => {
         if (!tips) return;
         const h = e => !tipsRef.current?.contains(e.target) && setTips(false);
@@ -53,9 +58,13 @@ export default function Quiz({ data, onRestart, restarting }) {
         onSuccess: (res, answerId) => {
             const questions = q.questions.map(x => x.id === cur.id ? { ...x, status: res.is_correct ? 1 : 2, user_answer_id: answerId, correct_answer_id: res.correct_answer_id } : x);
             setQ({ ...q, ...res.result, questions });
-            if (res.result.status === FINISHED) { setOptions(res.homework_options ?? []); setModal(true); return; }
-            const next = questions.findIndex((x, i) => i > idx && x.status === 0);
-            setIdx(next !== -1 ? next : questions.findIndex(x => x.status === 0));
+            if (res.result.status === FINISHED) { setOptions(res.homework_options ?? []); setModal(true); qc.invalidateQueries({ queryKey: ['themes-progress'] }); return; }
+            setWaiting(true);
+            waitRef.current = setTimeout(() => {
+                setWaiting(false);
+                const next = questions.findIndex((x, i) => i > idx && x.status === 0);
+                setIdx(next !== -1 ? next : questions.findIndex(x => x.status === 0));
+            }, (q.wait_time ?? 2) * 1000);
         },
     });
 
@@ -66,7 +75,7 @@ export default function Quiz({ data, onRestart, restarting }) {
     const attachError = attach.error?.response?.data?.message;
 
     const pick = id => {
-        if (done || answer.isPending) return;
+        if (done || answer.isPending || waiting) return;
         picked === id ? answer.mutate(id) : setPicked(id);
     };
 
@@ -82,10 +91,10 @@ export default function Quiz({ data, onRestart, restarting }) {
     return (
         <div className="flex-1 px-4 md:px-16 py-6 md:py-8">
             {finished && <button type="button" onClick={onRestart} disabled={restarting} className="mb-3 rounded bg-white/15 border border-white/40 px-4 py-2 text-base md:text-lg font-medium flex items-center gap-2">{restarting ? <LoaderCircle className="w-5 h-5 animate-spin" /> : <RotateCcw className="w-5 h-5" />} Qayta boshlash</button>}
-            <div className="flex items-center gap-3 mb-5 md:mb-6">
+            {multi && <div className="flex items-center gap-3 mb-5 md:mb-6">
                 {langs.map(l => <button key={l.key} type="button" onClick={() => setLang(l.key)} disabled={loadingLang} className={cx('rounded border border-white/40 px-4 md:px-5 py-2 text-base md:text-lg', key === l.key ? 'bg-[#1e3a8a]' : 'bg-gray-500/80')}>{l.key === 'krill' ? 'Кирил' : 'Lotin'}</button>)}
                 {loadingLang && <LoaderCircle className="w-5 h-5 animate-spin" />}
-            </div>
+            </div>}
 
             <h2 className="text-center text-2xl md:text-3xl font-bold mb-4 md:mb-5">{username}</h2>
 
@@ -95,9 +104,9 @@ export default function Quiz({ data, onRestart, restarting }) {
                     <img src={cur.image} alt="" className="max-h-[16rem] md:max-h-[32rem] w-full object-contain" />
                 </div>
             )}
-            <div className={cx('order-2 lg:order-1 lg:col-span-2 relative rounded border border-white/70 bg-[#3a3f44] px-4 md:px-6 py-4 md:py-5 text-lg md:text-3xl font-semibold', cur.instruction && 'pr-14 md:pr-16')}>
+            <div className={cx('order-2 lg:order-1 lg:col-span-2 relative rounded border border-white/70 bg-[#3a3f44] px-4 md:px-6 py-4 md:py-5 text-lg md:text-3xl font-semibold', cur.instruction && done && 'pr-14 md:pr-16')}>
                 {idx + 1}. {cur.question}
-                {cur.instruction && (
+                {cur.instruction && done && (
                     <div className="absolute right-3 top-3" ref={tipsRef}>
                         <button type="button" onClick={() => setTips(t => !t)} className="h-10 w-10 rounded-full bg-amber-400 text-gray-900 flex items-center justify-center shadow"><Lightbulb className="w-5 h-5" /></button>
                         {tips && <div className="absolute right-0 top-12 z-30 w-[28rem] max-w-[calc(100vw-3rem)] rounded-xl bg-white text-gray-800 p-5 text-base font-normal shadow-2xl whitespace-pre-line">{cur.instruction}</div>}
@@ -107,7 +116,7 @@ export default function Quiz({ data, onRestart, restarting }) {
 
                 <div className="order-3 lg:order-2 space-y-3 md:space-y-4">
                     {cur.answers.map((a, i) => (
-                        <button key={a.id} type="button" onClick={() => pick(a.id)} disabled={done || answer.isPending}
+                        <button key={a.id} type="button" onClick={() => pick(a.id)} disabled={done || answer.isPending || waiting}
                             className={cx('w-full flex rounded overflow-hidden border-2 bg-[#3a3f44] text-left text-base md:text-xl transition-colors', answerClass(a))}>
                             <span className="w-14 md:w-20 shrink-0 bg-[#6fa8dc] text-white font-bold flex items-center justify-center">F{i + 1}</span>
                             <span className="px-4 md:px-6 py-3 md:py-4">{a.text}</span>

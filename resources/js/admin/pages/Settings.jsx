@@ -1,10 +1,59 @@
-import { useState } from 'react';
-import { Eye, EyeOff, FileQuestion, Plus, SquarePen, Trash2 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Eye, EyeOff, FileQuestion, Image as ImageIcon, LoaderCircle, Plus, SquarePen, Trash2, Upload } from 'lucide-react';
 import { useDelete, useItem, useSave } from '../lib/hooks';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { messageOf } from '../api';
 import { useToast } from '../lib/toast';
 import { Badge, Empty, Field, Input, PageHeader, SaveButton, Td, Th, THead } from '../components/ui';
+
+/** Rasmsiz savollar uchun standart rasm — alohida karta, alohida API. */
+function QuizImageCard({ url }) {
+    const qc = useQueryClient();
+    const toast = useToast();
+    const file = useRef(null);
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState(null);
+    const refresh = () => qc.invalidateQueries({ queryKey: ['/settings/general'] });
+
+    const upload = async e => {
+        const f = e.target.files[0]; e.target.value = '';
+        if (!f) return;
+        if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp'].includes(f.type)) return setError('Rasm formati qo‘llab-quvvatlanmaydi (jpg, png, gif, webp, bmp).');
+        setError(null); setBusy(true);
+        const fd = new FormData(); fd.append('image', f);
+        try { const { data } = await api.post('/settings/quiz-image', fd); toast(data.message); refresh(); }
+        catch (err) { setError(err.response?.data?.errors?.image?.[0] ?? messageOf(err)); }
+        finally { setBusy(false); }
+    };
+    const remove = async () => {
+        setBusy(true);
+        try { const { data } = await api.delete('/settings/quiz-image'); toast(data.message); refresh(); }
+        catch (err) { toast(messageOf(err), 'error'); }
+        finally { setBusy(false); }
+    };
+
+    return (
+        <div className="card p-6">
+            <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                    <h3 className="text-sm font-semibold text-gray-900">Test uchun standart rasm</h3>
+                    <p className="mt-1 text-xs text-gray-500">Rasmi bo‘lmagan savollarda test yechish paytida shu rasm ko‘rsatiladi.</p>
+                </div>
+                <ImageIcon className="w-5 h-5 text-gray-300 shrink-0" />
+            </div>
+            <div className="relative rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 overflow-hidden aspect-[16/7] flex items-center justify-center">
+                {url ? <img src={url} alt="" className="w-full h-full object-contain" /> : <span className="text-sm text-gray-400 flex flex-col items-center gap-2"><ImageIcon className="w-8 h-8 text-gray-300" />Rasm yuklanmagan</span>}
+                {busy && <span className="absolute inset-0 bg-white/70 flex items-center justify-center"><LoaderCircle className="w-6 h-6 animate-spin text-admin-primary" /></span>}
+            </div>
+            {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+            <input ref={file} type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.bmp" className="hidden" onChange={upload} />
+            <div className="mt-4 flex items-center justify-end gap-2">
+                {url && <button type="button" onClick={remove} disabled={busy} className="btn-secondary text-red-600 hover:bg-red-50"><Trash2 className="w-4 h-4" /> O‘chirish</button>}
+                <button type="button" onClick={() => file.current.click()} disabled={busy} className="btn-primary"><Upload className="w-4 h-4" /> {url ? 'Almashtirish' : 'Yuklash'}</button>
+            </div>
+        </div>
+    );
+}
 
 export function TelegramSettings() {
     const { data } = useItem('/settings/telegram');
@@ -64,7 +113,7 @@ export function GeneralSettings() {
     const toast = useToast();
     const toggle = useMutation({ mutationFn: id => api.patch(`/settings/languages/${id}/toggle`).then(r => r.data), onSuccess: d => { toast(d.message); qc.invalidateQueries({ queryKey: ['/settings/general'] }); }, onError: e => toast(messageOf(e), 'error') });
     if (!data) return null;
-    const f = form ?? { default_language_id: data.default_language_id ?? '', max_attempts_count: data.max_attempts_count };
+    const f = form ?? { default_language_id: data.default_language_id ?? '', max_attempts_count: data.max_attempts_count, twenty_quiz_time: data.twenty_quiz_time, fifty_quiz_time: data.fifty_quiz_time, quiz_wait_time: data.quiz_wait_time };
     const set = (k, v) => setForm({ ...f, [k]: v });
 
     return (
@@ -87,6 +136,8 @@ export function GeneralSettings() {
                     <Field error={errors.max_attempts_count}><Input type="number" min={1} value={f.max_attempts_count} onChange={e => set('max_attempts_count', e.target.value)} /></Field>
                     <div className="mt-5 flex justify-end"><SaveButton saving={saving} /></div>
                 </form>
+
+                <QuizImageCard url={data.default_quiz_image_url} />
 
                 <div className="card">
                     <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
@@ -115,6 +166,16 @@ export function GeneralSettings() {
                         </tbody>
                     </table>
                 </div>
+                <form onSubmit={e => { e.preventDefault(); save({ method: 'put', url: '/settings/general', data: { default_language_id: data.default_language_id, max_attempts_count: data.max_attempts_count, twenty_quiz_time: f.twenty_quiz_time, fifty_quiz_time: f.fifty_quiz_time, quiz_wait_time: f.quiz_wait_time } }); }} className="card p-6 lg:col-span-2">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-4">Imtihon vaqtlari</h3>
+                    <div className="flex flex-wrap items-end gap-4">
+                        <Field label="20 talik" hint="(daqiqa)" error={errors.twenty_quiz_time} className="w-40"><Input type="number" min={1} value={f.twenty_quiz_time} onChange={e => set('twenty_quiz_time', e.target.value)} /></Field>
+                        <Field label="50 talik" hint="(daqiqa)" error={errors.fifty_quiz_time} className="w-40"><Input type="number" min={1} value={f.fifty_quiz_time} onChange={e => set('fifty_quiz_time', e.target.value)} /></Field>
+                        <Field label="Kutish" hint="(soniya)" error={errors.quiz_wait_time} className="w-40"><Input type="number" min={0} value={f.quiz_wait_time} onChange={e => set('quiz_wait_time', e.target.value)} /></Field>
+                        <p className="text-xs text-gray-400 pb-2.5">Kutish — javob tasdiqlangandan keyin keyingi savolga o‘tish vaqti.</p>
+                        <div className="ml-auto"><SaveButton saving={saving} /></div>
+                    </div>
+                </form>
             </div>
             {modal && <LanguageModal item={modal.id ? modal : null} onClose={() => setModal(null)} onSaved={() => setModal(null)} />}
         </>

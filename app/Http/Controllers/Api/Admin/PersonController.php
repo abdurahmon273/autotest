@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Requests\Admin\PersonRequest;
+use App\Models\GlobalSetting;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -35,8 +37,14 @@ abstract class PersonController extends ApiController
     public function store(PersonRequest $request)
     {
         $this->can("create_{$this->key}");
-        $person = User::create($request->safe()->except('group_id'));
+        $data = $request->safe()->except('group_id');
+        // Yangi student: imkoniyatlar soni umumiy sozlamadagi "Jarima imkoniyatlar soni" dan olinadi
+        if ($this->role === Role::STUDENT && empty($data['max_attempts'])) {
+            $data['max_attempts'] = (int) (GlobalSetting::current()->max_attempts_count ?? 3);
+        }
+        $person = User::create($data);
         $person->roles()->sync([$this->role]);
+        \App\Http\Middleware\EnsureUser::flush($person->id);
         if ($request->filled('group_id')) {
             $person->groups()->sync([$request->group_id]);
         }

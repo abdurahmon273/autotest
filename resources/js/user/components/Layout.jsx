@@ -5,13 +5,25 @@ import { AlignLeft, LogOut, X } from 'lucide-react';
 import api, { logout } from '../api';
 import { useLang } from '../lib';
 
+/** Yumaloq foiz ko'rsatkichi: halqa to'ldirilishi va o'rtada son. */
+function PercentRing({ value }) {
+    const v = Math.max(0, Math.min(100, value));
+    const color = v >= 90 ? '#4ade80' : v >= 70 ? '#fbbf24' : '#f87171';
+    return (
+        <span className="shrink-0 h-11 w-11 rounded-full flex items-center justify-center" style={{ background: `conic-gradient(${color} ${v * 3.6}deg, rgba(255,255,255,0.12) 0deg)` }}>
+            <span className="h-8 w-8 rounded-full bg-[#0b1f45] flex items-center justify-center text-[11px] font-bold tabular-nums" style={{ color }}>{v}%</span>
+        </span>
+    );
+}
+
 export default function Layout() {
     const [open, setOpen] = useState(false);
     const nav = useNavigate();
     const appName = document.getElementById('app').dataset.appName;
     const { key } = useLang();
     const { data: themes } = useQuery({ queryKey: ['themes', key], queryFn: () => api.get('/themes', { params: { lang: key } }).then(r => r.data), enabled: open, staleTime: 5 * 60_000 });
-    const { data: homeworks } = useQuery({ queryKey: ['homeworks', key], queryFn: () => api.get('/homeworks', { params: { lang: key } }).then(r => r.data), enabled: open, staleTime: 60_000 });
+    const { data: progress } = useQuery({ queryKey: ['themes-progress'], queryFn: () => api.get('/themes/progress').then(r => r.data), enabled: open && !!themes, staleTime: 5 * 60_000 });
+    const { data: homeworks } = useQuery({ queryKey: ['homeworks', key], queryFn: () => api.get('/homeworks', { params: { lang: key } }).then(r => r.data), enabled: open && !!themes, staleTime: 60_000 });
 
     useEffect(() => {
         const h = e => e.key === 'Escape' && setOpen(false);
@@ -71,7 +83,8 @@ export default function Layout() {
                                             {t_.icon_url ? <img src={t_.icon_url} alt="" className="w-6 h-6 rounded object-cover" /> : t_.icon}
                                         </span>
                                     )}
-                                    <span>{t_.title}</span>
+                                    <span className="flex-1 min-w-0">{t_.title}</span>
+                                    {progress?.[t_.id] > 0 && <PercentRing value={progress[t_.id]} />}
                                 </button>
                             )) : Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-14 rounded-xl bg-white/10 animate-pulse" />)}
                         </div>

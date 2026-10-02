@@ -18,7 +18,8 @@ class ThemeController extends ApiController
     {
         $this->can('access_theme');
 
-        return Theme::withCount('questions')
+        return Theme::withInactive()->withCount('questions')
+            ->when($request->filled('status'), fn ($q) => $q->where('status', (int) $request->status))
             ->when($request->search, fn ($q, $s) => $q->where(fn ($q) => $q->where('title', 'like', "%{$s}%")->orWhere('title_krill', 'like', "%{$s}%")))
             ->latest('id')
             ->paginate(15);
@@ -48,16 +49,29 @@ class ThemeController extends ApiController
         return $this->ok('Saqlandi.', ['id' => $theme->id]);
     }
 
-    public function show(Theme $theme)
+    public function show(int $theme)
     {
         $this->can('update_theme');
+        $theme = Theme::withInactive()->findOrFail($theme);
 
-        return $theme->only('id', 'title', 'title_krill', 'icon_type', 'icon', 'icon_url');
+        return $theme->only('id', 'title', 'title_krill', 'icon_type', 'icon', 'icon_url', 'status');
     }
 
-    public function update(Request $request, Theme $theme)
+    /** Faol / yashirin holatni almashtirish. Yashirin mavzu hech qayerda ishlatilmaydi. */
+    public function toggle(int $theme)
     {
         $this->can('update_theme');
+        $theme = Theme::withInactive()->findOrFail($theme);
+        $theme->update(['status' => $theme->status ? Theme::STATUS_HIDDEN : Theme::STATUS_ACTIVE]);
+        \Illuminate\Support\Facades\Cache::flush();
+
+        return $this->ok($theme->status ? 'Mavzu faollashtirildi.' : 'Mavzu yashirildi.', ['status' => $theme->status]);
+    }
+
+    public function update(Request $request, int $theme)
+    {
+        $this->can('update_theme');
+        $theme = Theme::withInactive()->findOrFail($theme);
         $data = $this->validated($request, $theme);
         $update = ['title' => ($data['title'] ?? null) ?: null, 'title_krill' => ($data['title_krill'] ?? null) ?: null, 'icon_type' => $data['icon_type']];
         $typeChanged = (int) $data['icon_type'] !== $theme->icon_type;
@@ -78,10 +92,10 @@ class ThemeController extends ApiController
         return $this->ok('Saqlandi.');
     }
 
-    public function destroy(Theme $theme)
+    public function destroy(int $theme)
     {
         $this->can('delete_theme');
-        $theme->delete();
+        Theme::withInactive()->findOrFail($theme)->delete();
 
         return $this->ok('O‘chirildi.');
     }

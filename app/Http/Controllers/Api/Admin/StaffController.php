@@ -67,6 +67,7 @@ class StaffController extends ApiController
         }
         $user->roles()->sync($roles);
         $user->flushPermissionCache();
+        \App\Http\Middleware\EnsureUser::flush($user->id);
 
         return $this->ok('Saqlandi.');
     }

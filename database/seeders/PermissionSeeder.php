@@ -17,6 +17,7 @@ class PermissionSeeder extends Seeder
             ['access_settings', Permission::TYPE_ADMIN],
             ['access_telegram_setting', Permission::TYPE_ADMIN],
             ['access_general_setting', Permission::TYPE_ADMIN],
+            ['access_random_logic', Permission::TYPE_ADMIN],
             ['access_test', Permission::TYPE_ADMIN],
         ];
 
@@ -26,17 +27,21 @@ class PermissionSeeder extends Seeder
             }
         }
 
-        $permissions = [];
-        foreach ($rows as $i => [$title, $type]) {
-            $permissions[] = ['id' => $i + 1, 'title' => $title, 'type' => $type];
+        $created = 0;
+        foreach ($rows as [$title, $type]) {
+            $permission = Permission::firstOrNew(['title' => $title]);
+            if (! $permission->exists) {
+                $created++;
+            }
+            $permission->type = $type;
+            $permission->save();
         }
 
-        Permission::upsert($permissions, ['id'], ['title', 'type']);
-
-        // Admin roliga yangi qo'shilgan admin-turidagi ruxsatlarni biriktirish (mavjudlari saqlanadi).
         if ($admin = Role::find(Role::ADMIN)) {
             $admin->permissions()->syncWithoutDetaching(Permission::whereIn('type', [Permission::TYPE_ADMIN, Permission::TYPE_ALL])->pluck('id'));
             $admin->flushUsersPermissionCache();
         }
+
+        $this->command?->info("Ruxsatlar: jami ".count($rows).", yangi yaratildi: {$created}, Admin roliga biriktirildi.");
     }
 }

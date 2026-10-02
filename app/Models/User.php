@@ -24,6 +24,7 @@ class User extends Authenticatable
         'username',
         'chat_id',
         'max_attempts',
+        'lang',
         'session_id',
         'password',
     ];
@@ -57,6 +58,11 @@ class User extends Authenticatable
     public function homeworks(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Homework::class);
+    }
+
+    public function results(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Result::class);
     }
 
     public function scopeWithRole(Builder $q, int $roleId): Builder

@@ -30,7 +30,7 @@ export function GroupsIndex() {
                 render={g => (
                     <tr key={g.id} className="hover:bg-gray-50">
                         <Td className="text-gray-400">{g.id}</Td>
-                        <Td className="font-medium text-gray-900">{g.name}</Td>
+                        <Td className="font-medium text-gray-900">{can('show_group') ? <Link to={`/admin/groups/${g.id}`} className="hover:text-blue-600">{g.name}</Link> : g.name}</Td>
                         <Td className="text-gray-500">{g.description ?? '—'}</Td>
                         <Td>{g.students_count}</Td>
                         <Td className="text-gray-500">{fmtDate(g.created_at)}</Td>

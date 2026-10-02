@@ -24,12 +24,32 @@ class Theme extends Model
 
     protected $appends = ['icon_url'];
 
+    public const STATUS_HIDDEN = 0;
+    public const STATUS_ACTIVE = 1;
+
     protected $fillable = [
         'title',
         'title_krill',
         'icon_type',
         'icon',
+        'status',
     ];
+
+    protected $casts = ['status' => 'integer'];
+
+    /**
+     * Global scope: status = 0 mavzular hech qayerda ko'rinmaydi (ro'yxat, menyu, random quiz, pivot).
+     * Admin boshqaruvi uchun Theme::withInactive() ishlatiladi.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('active', fn (Builder $q) => $q->where('themes.status', self::STATUS_ACTIVE));
+    }
+
+    public static function withInactive(): Builder
+    {
+        return static::withoutGlobalScope('active');
+    }
 
     public function questions(): BelongsToMany
     {

@@ -20,14 +20,33 @@ class QuizController extends Controller
         return $request->user()->only('id', 'name', 'username');
     }
 
-    public function languages()
+    public function languages(Request $request)
     {
-        return Lang::all(true);
+        return ['list' => Lang::all(true), 'current' => Lang::forUser($request->user())];
+    }
+
+    /** Foydalanuvchi tilini saqlash. */
+    public function setLang(Request $request)
+    {
+        $keys = array_column(Lang::all(true), 'key');
+        $data = $request->validate(['lang' => ['required', 'string', \Illuminate\Validation\Rule::in($keys)]]);
+        $request->user()->forceFill(['lang' => $data['lang']])->saveQuietly();
+
+        return ['lang' => $data['lang']];
     }
 
     public function themes(Request $request)
     {
-        return Theme::select('id', 'icon_type', 'icon')->titled(Lang::pick($request->lang))->orderBy('id')->get();
+        return Theme::select('id', 'icon_type', 'icon')
+            ->titled(Lang::pick($request->lang))
+            ->orderBy('id')
+            ->get();
+    }
+
+    /** Har mavzu uchun oxirgi yakunlangan natija foizi: {theme_id: percent}. Keshlanadi, natija yakunlanganda tozalanadi. */
+    public function themesProgress(Request $request, TopicQuizService $service)
+    {
+        return (object) $service->progressForUser($request->user());
     }
 
     public function theme(Request $request, Theme $theme, TopicQuizService $service)
@@ -93,14 +112,26 @@ class QuizController extends Controller
     public function answer(Request $request, Result $result, HomeworkService $homeworks)
     {
         abort_unless($result->user_id === $request->user()->id, 403);
-        $data = $request->validate(['question_id' => ['required', 'integer'], 'answer_id' => ['required', 'integer']]);
+        $data = $request->validate(['question_id' => ['required', 'integer'], 'answer_id' => ['required', 'integer'], 'time' => ['nullable', 'integer', 'min:0', 'max:86400']]);
 
-        $res = QuizService::for($result->type)->answer($result, $data['question_id'], $data['answer_id']);
+        $res = QuizService::for($result->type)->answer($result, $data['question_id'], $data['answer_id'], (int) ($data['time'] ?? 0));
         if ($result->status === \App\Enums\ResultStatusEnum::FINISHED) {
             $res['homework_options'] = $homeworks->optionsForResult($result);
         }
 
         return $res;
+    }
+
+    public function finish(Request $request, Result $result)
+    {
+        abort_unless($result->user_id === $request->user()->id, 403);
+        $service = QuizService::for($result->type);
+
+        if ($result->status !== \App\Enums\ResultStatusEnum::FINISHED) {
+            $service->finish($result, $service->isExpired($result));
+        }
+
+        return $service->summary($result->refresh());
     }
 
     public function lastThemeResult(Request $request, Theme $theme, TopicQuizService $service)

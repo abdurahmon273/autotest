@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\GlobalSetting;
 use App\Models\Language;
+use Illuminate\Support\Facades\Cache;
 
 class Lang
 {
@@ -11,12 +12,34 @@ class Lang
 
     public static function all(bool $activeOnly = false): array
     {
-        $default = GlobalSetting::current()->default_language_id;
+        // Har so'rovda 2 ta query o'rniga kesh (sozlamalar o'zgarganda flush() chaqiriladi)
+        return Cache::remember('languages.'.($activeOnly ? 'active' : 'all'), 3600, function () use ($activeOnly) {
+            $default = GlobalSetting::current()->default_language_id;
 
-        return Language::when($activeOnly, fn ($q) => $q->where('status', 1))->orderByRaw('id = ? desc', [$default])->orderBy('id')->get()
-            ->filter(fn ($l) => in_array($l->code, self::KEYS))
-            ->map(fn ($l) => ['key' => $l->code, 'title' => $l->title, 'default' => $l->id === $default])
-            ->values()->all();
+            return Language::when($activeOnly, fn ($q) => $q->where('status', 1))->orderByRaw('id = ? desc', [$default])->orderBy('id')->get()
+                ->filter(fn ($l) => in_array($l->code, self::KEYS))
+                ->map(fn ($l) => ['key' => $l->code, 'title' => $l->title, 'default' => $l->id === $default])
+                ->values()->all();
+        });
+    }
+
+    public static function flush(): void
+    {
+        Cache::forget('languages.active');
+        Cache::forget('languages.all');
+    }
+
+    /** Userning tili: null bo'lsa birlamchi til yoziladi va qaytariladi. Faol bo'lmagan til tanlangan bo'lsa ham birlamchiga tushadi. */
+    public static function forUser(\App\Models\User $user): string
+    {
+        $active = array_column(self::all(true), 'key');
+        if ($user->lang && in_array($user->lang, $active)) {
+            return $user->lang;
+        }
+        $default = self::default();
+        $user->forceFill(['lang' => $default])->saveQuietly();
+
+        return $default;
     }
 
     public static function default(): string
