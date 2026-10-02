@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Storage;
  *  3. 16 ta yangi mavzu + 1264 ta yangi savol yaratiladi.
  * Natija: 17 ta faol mavzu (16 + Default).
  *
- * Qayta ishga tushirishdan himoya: 16 ta mavzudan birortasi allaqachon faol bo'lsa seeder to'xtaydi.
+ * Qayta ishga tushirishdan himoya: images/osonprava rasmli savollar mavjud bo'lsa seeder to'xtaydi.
  *
  *   php artisan db:seed --class=OsonpravaSeeder
  *
@@ -49,9 +49,10 @@ class OsonpravaSeeder extends Seeder
 
     public function run(): void
     {
-        $titles = array_column(self::THEMES, 0);
-        if (Theme::whereIn('title', $titles)->exists()) {
-            $this->command?->warn('Osonprava mavzulari allaqachon mavjud. Seeder qayta ishlamadi (dublikat bo\'lmasligi uchun).');
+        // Qayta ishga tushirishdan himoya: bu seeder yaratgan savollar (images/osonprava/...) mavjud bo'lsa — to'xtaymiz.
+        // Mavzu nomi bo'yicha tekshirilmaydi: eski seed'da ham shunday nomli mavzular bo'lishi mumkin.
+        if (Question::withTrashed()->where('image', 'like', self::IMAGE_DIR.'/%')->exists()) {
+            $this->command?->warn('Osonprava savollari allaqachon yuklangan (images/osonprava). Seeder qayta ishlamadi.');
 
             return;
         }
