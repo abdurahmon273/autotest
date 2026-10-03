@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Enums\ResultStatusEnum;
 use App\Http\Requests\Admin\TaskRequest;
 use App\Jobs\FinishTaskJob;
+use App\Jobs\SentTaskCreateNotificationJob;
+use App\Jobs\SentTaskNotificationJob;
 use App\Models\Group;
 use App\Models\Homework;
 use App\Models\Task;
@@ -61,6 +63,8 @@ class TaskController extends ApiController
             return $task;
         });
         FinishTaskJob::schedule($task);
+        SentTaskNotificationJob::schedule($task);
+        SentTaskCreateNotificationJob::dispatch($task->id);
 
         return $this->ok('Saqlandi.', ['id' => $task->id]);
     }
@@ -105,6 +109,7 @@ class TaskController extends ApiController
         $task->update($request->safe()->except('group_id'));
         if ($task->wasChanged('end_date') || $task->wasChanged('status')) {
             FinishTaskJob::schedule($task->refresh());
+            SentTaskNotificationJob::schedule($task);
         }
         // Admin qo'lda "Tugallangan" qilsa — homeworklar darhol 0/2 ga keltiriladi, jarimalar yoziladi.
         if ($task->wasChanged('status') && (int) $task->status === Task::STATUS_EXPIRED && $task->end_date->lte(now())) {

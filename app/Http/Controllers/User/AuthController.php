@@ -36,16 +36,28 @@ class AuthController extends Controller
             return back()->withErrors(['username' => 'Siz hali guruhga biriktirilmagansiz. Administratorga murojaat qiling.'])->onlyInput('username', 'remember');
         }
 
-        Auth::login($user, $request->boolean('remember'));
+        $pendingChatId = $request->session()->pull(TelegramAuthController::SESSION_PENDING);
+
+        Auth::login($user, $request->boolean('remember') || (bool) $pendingChatId);
         $request->session()->regenerate();
-        $user->forceFill(['session_id' => $request->session()->getId()])->save();
+
+        if ($pendingChatId) {
+            if (! User::where('chat_id', $pendingChatId)->where('id', '!=', $user->id)->exists()) {
+                $user->forceFill(['chat_id' => $pendingChatId])->save();
+            }
+            $request->session()->put(TelegramAuthController::SESSION_FLAG, true);
+        } else {
+            $user->forceFill(['session_id' => $request->session()->getId()])->save();
+        }
 
         return redirect()->route('app');
     }
 
     public function logout(Request $request)
     {
-        $request->user()?->forceFill(['session_id' => null])->save();
+        if (! $request->session()->get(TelegramAuthController::SESSION_FLAG)) {
+            $request->user()?->forceFill(['session_id' => null])->save();
+        }
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

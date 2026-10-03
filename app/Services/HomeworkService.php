@@ -10,6 +10,7 @@ use App\Models\Result;
 use App\Models\Role;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\TelegramService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -82,6 +83,37 @@ class HomeworkService
                 'homeworks.status', 'homeworks.percentage', 'homeworks.tests_count',
                 DB::raw("COALESCE(themes.{$titleCol}, themes.{$other}) as theme_title"),
             ]);
+    }
+
+    public const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentyabr', 'oktyabr', 'noyabr', 'dekabr'];
+
+    public static function formatDate(\Carbon\Carbon $d): string
+    {
+        return $d->day.' - '.self::MONTHS[$d->month - 1].' '.$d->format('H:i');
+    }
+
+    /** Vazifaga biriktirilgan va chat_id si bor studentlarga bitta matnni yuboradi. Yuborilganlar sonini qaytaradi. */
+    public function notifyStudents(Task $task, string $text, ?TelegramService $telegram = null): int
+    {
+        $telegram ??= app(TelegramService::class);
+
+        $students = User::whereNotNull('chat_id')
+            ->whereIn('id', $task->homeworks()->select('user_id'))
+            ->get(['id', 'chat_id']);
+
+        $buttons = [
+            ['text' => 'Web', 'url' => rtrim(config('app.url'), '/').'/app'],
+            ['text' => 'Telegram', 'web_app' => ['url' => route('tg')]],
+        ];
+
+        $sent = 0;
+        foreach ($students as $student) {
+            if ($telegram->trySend($student->chat_id, $text, $buttons)) {
+                $sent++;
+            }
+        }
+
+        return $sent;
     }
 
     /** Shu result uchun "vazifa sifatida saqlash" mumkin bo'lgan homeworklar. */

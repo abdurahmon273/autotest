@@ -21,17 +21,41 @@ class TelegramService
     }
 
     /** Bitta xabar yuborish (HTML). Xato bo'lsa RuntimeException. */
-    public function send(string $chatId, string $text): void
+    public function send(string $chatId, string $text, array $buttons = []): void
     {
-        $response = Http::timeout(15)->post("https://api.telegram.org/bot{$this->token()}/sendMessage", [
+        $payload = [
             'chat_id' => $chatId,
             'text' => $text,
             'parse_mode' => 'HTML',
             'disable_web_page_preview' => true,
-        ]);
+        ];
+        if ($buttons) {
+            $payload['reply_markup'] = ['inline_keyboard' => [$buttons]];
+        }
+
+        $response = Http::timeout(15)->post("https://api.telegram.org/bot{$this->token()}/sendMessage", $payload);
 
         if (! $response->ok() || ! $response->json('ok')) {
             throw new RuntimeException('Telegram: '.($response->json('description') ?? 'xabar yuborilmadi.'));
+        }
+    }
+
+    /**
+     * Xatosiz yuborish: chat yo'q, bot bloklangan, start bosilmagan, tarmoq xatosi — hammasi jimgina false.
+     * Bir studentga yuborilmasa qolganlariga ta'sir qilmaydi, log ham yozilmaydi.
+     */
+    public function trySend(?string $chatId, string $text, array $buttons = []): bool
+    {
+        if ($chatId === null || $chatId === '') {
+            return false;
+        }
+
+        try {
+            $this->send($chatId, $text, $buttons);
+
+            return true;
+        } catch (\Throwable) {
+            return false;
         }
     }
 

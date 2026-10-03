@@ -58,9 +58,12 @@ function QuizImageCard({ url }) {
 export function TelegramSettings() {
     const { data } = useItem('/settings/telegram');
     const [token, setToken] = useState(null);
+    const [hours, setHours] = useState(null);
     const { save, saving, errors } = useSave({ invalidate: ['/settings/telegram'] });
+    const notif = useSave({ invalidate: ['/settings/telegram'] });
     if (!data) return null;
     const t = token ?? data.token;
+    const h = hours ?? data.task_notification_time;
 
     return (
         <>
@@ -70,6 +73,13 @@ export function TelegramSettings() {
                     <h3 className="text-sm font-semibold text-gray-900 mb-4">Telegram bot sozlash</h3>
                     <Field label="Bot token" error={errors.token}><Input value={t} onChange={e => setToken(e.target.value)} className="font-mono" placeholder="123456789:AAH..." /></Field>
                     <div className="mt-5 flex justify-end"><SaveButton saving={saving} /></div>
+                </form>
+
+                <form onSubmit={e => { e.preventDefault(); notif.save({ method: 'put', url: '/settings/telegram/notification', data: { task_notification_time: h } }); }} className="card p-6">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-4">Vazifa eslatmasi</h3>
+                    <Field label="Tugashidan necha soat oldin" error={notif.errors.task_notification_time}><Input type="number" min={1} max={168} value={h} onChange={e => setHours(e.target.value)} /></Field>
+                    <p className="mt-2 text-xs text-gray-400">Shu vaqt qolganda studentlarga botdan eslatma yuboriladi.</p>
+                    <div className="mt-5 flex justify-end"><SaveButton saving={notif.saving} /></div>
                 </form>
             </div>
         </>

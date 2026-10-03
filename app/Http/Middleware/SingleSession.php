@@ -13,6 +13,10 @@ class SingleSession
     {
         $user = $request->user();
 
+        if ($request->session()->get(\App\Http\Controllers\User\TelegramAuthController::SESSION_FLAG)) {
+            return $next($request);
+        }
+
         if ($user && ! $user->is_admin && $user->session_id !== $request->session()->getId()) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();

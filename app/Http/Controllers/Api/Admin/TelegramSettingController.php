@@ -12,7 +12,22 @@ class TelegramSettingController extends ApiController
     {
         $this->can('access_telegram_setting');
 
-        return ['token' => (string) GlobalSetting::current()->telegram_bot_token];
+        $s = GlobalSetting::current();
+
+        return ['token' => (string) $s->telegram_bot_token, 'task_notification_time' => $s->task_notification_time ?? GlobalSetting::DEFAULT_TASK_NOTIFICATION_TIME];
+    }
+
+    public function updateNotification(Request $request)
+    {
+        $this->can('access_telegram_setting');
+        $data = $request->validate(['task_notification_time' => ['required', 'integer', 'min:1', 'max:168']]);
+
+        $setting = GlobalSetting::current();
+        $setting->task_notification_time = $data['task_notification_time'];
+        $setting->effective_at = now();
+        $setting->save();
+
+        return $this->ok('Saqlandi.');
     }
 
     public function update(Request $request)
@@ -29,6 +44,10 @@ class TelegramSettingController extends ApiController
         try {
             $response = Http::timeout(10)->post("https://api.telegram.org/bot{$token}/setWebhook", ['url' => route('telegram.webhook')]);
             $error = $response->ok() && $response->json('ok') ? null : ($response->json('description') ?? 'Telegram javob bermadi.');
+
+            Http::timeout(10)->post("https://api.telegram.org/bot{$token}/setChatMenuButton", [
+                'menu_button' => ['type' => 'web_app', 'text' => config('app.name'), 'web_app' => ['url' => route('tg')]],
+            ]);
         } catch (\Throwable $e) {
             $error = 'Telegram bilan bog‘lanib bo‘lmadi.';
         }

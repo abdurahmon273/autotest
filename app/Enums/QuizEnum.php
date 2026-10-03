@@ -10,7 +10,7 @@ enum QuizEnum: string
 
     public const MIN_INCORRECT_COUNT = [
         '20_TALIK' => 2,
-        '50_TALIK' => 3,
+        '50_TALIK' => 2,
         'MAVZULASHTIRILGAN' => 0,
     ];
 

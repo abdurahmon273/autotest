@@ -17,6 +17,7 @@ class GlobalSetting extends Model
         'twenty_quiz_time',
         'fifty_quiz_time',
         'quiz_wait_time',
+        'task_notification_time',
         'effective_at',
     ];
 
@@ -25,6 +26,13 @@ class GlobalSetting extends Model
     public const DEFAULT_FIFTY_TIME = 60;
 
     public const DEFAULT_WAIT_TIME = 2;
+
+    public const DEFAULT_TASK_NOTIFICATION_TIME = 4;
+
+    public static function taskNotificationHours(): int
+    {
+        return (int) (static::current()->task_notification_time ?? self::DEFAULT_TASK_NOTIFICATION_TIME);
+    }
 
     public static function examMinutes(QuizEnum $type): int
     {
