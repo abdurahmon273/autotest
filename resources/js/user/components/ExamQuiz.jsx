@@ -33,6 +33,7 @@ export default function ExamQuiz({ data, onRetry }) {
     const tipsRef = useRef(null);
     const waitRef = useRef(null);
     const spentRef = useRef({});
+    const [order, setOrder] = useState({});
     const username = document.getElementById('app').dataset.user;
     const { langs, key, set: setLang, multi } = useLang();
     const [texts, setTexts] = useState(() => ({ [data.lang]: Object.fromEntries(data.questions.map(x => [x.id, x])) }));
@@ -63,6 +64,12 @@ export default function ExamQuiz({ data, onRetry }) {
     }, [tips]);
 
     useEffect(() => { setTips(false); }, [idx]);
+
+    useEffect(() => {
+        const ids = q.questions[idx].answers.map(a => a.id);
+        for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+        setOrder(o => ({ ...o, [q.questions[idx].id]: ids }));
+    }, [idx]);
 
     const finish = useMutation({
         mutationFn: () => api.post(`/results/${q.id}/finish`).then(r => r.data),
@@ -97,7 +104,8 @@ export default function ExamQuiz({ data, onRetry }) {
     useEffect(() => { shownAtRef.current = Date.now(); }, [base.id]);
     const timeSpent = id => Math.round((spentRef.current[id] ?? 0) + (base.id === id ? (Date.now() - shownAtRef.current) / 1000 : 0));
     const tx = texts[key]?.[base.id] ?? texts[data.lang]?.[base.id] ?? base;
-    const cur = { ...base, question: tx.question, instruction: tx.instruction, answers: base.answers.map(a => ({ ...a, text: tx.answers.find(x => x.id === a.id)?.text ?? a.text })) };
+    const ordered = order[base.id] ? [...base.answers].sort((a, b) => order[base.id].indexOf(a.id) - order[base.id].indexOf(b.id)) : base.answers;
+    const cur = { ...base, question: tx.question, instruction: tx.instruction, answers: ordered.map(a => ({ ...a, text: tx.answers.find(x => x.id === a.id)?.text ?? a.text })) };
     const done = cur.status !== 0;
 
     const goNext = questions => {

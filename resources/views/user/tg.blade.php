@@ -7,7 +7,7 @@
     <title>{{ config('app.name') }}</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(#0f2a5c, #3b5bdb); color: #fff; font-family: sans-serif; }
+        body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0f2a5c; color: #fff; font-family: sans-serif; }
         .box { text-align: center; }
         .spin { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; margin: 0 auto 16px; animation: s 1s linear infinite; }
         @keyframes s { to { transform: rotate(360deg); } }

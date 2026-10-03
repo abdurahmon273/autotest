@@ -23,7 +23,7 @@ export default function Theme() {
         <HomeworkBanner themeId={id} enabled={!!data} />
         <div className="flex-1 flex items-center justify-center p-6">
             <div className="w-full max-w-lg rounded-2xl bg-white overflow-hidden text-gray-900 shadow-2xl">
-                <div className="bg-gradient-to-r from-[#0f2a5c] to-[#3b5bdb] px-8 py-10 text-white">
+                <div className="bg-[#0f2a5c] px-8 py-10 text-white">
                     <p className="text-xs font-semibold uppercase tracking-widest text-white/70">Bo‘lim testi</p>
                     {data ? <h1 className="mt-2 text-3xl font-extrabold leading-tight flex items-center gap-3">
                         {data.theme.icon_type === 0 && data.theme.icon && <span>{data.theme.icon}</span>}{data.theme.title}

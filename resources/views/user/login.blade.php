@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css'])
 </head>
-<body class="font-inter min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0f2a5c] to-[#3b5bdb]">
+<body class="font-inter min-h-screen flex items-center justify-center bg-[#0f2a5c]">
     <form method="POST" action="{{ route('login') }}" class="w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl">
         @csrf
         <h1 class="text-2xl font-extrabold text-center mb-8">Avtomaktab</h1>
