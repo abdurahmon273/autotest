@@ -32,12 +32,21 @@ class TelegramLogHandler extends AbstractProcessingHandler
         }
 
         try {
-            Http::timeout(5)->post("https://api.telegram.org/bot{$this->token}/sendMessage", [
+            $text = mb_substr($this->format($record), 0, self::MAX_LENGTH);
+            $response = Http::timeout(5)->post("https://api.telegram.org/bot{$this->token}/sendMessage", [
                 'chat_id' => $this->chatId,
-                'text' => mb_substr($this->format($record), 0, self::MAX_LENGTH),
+                'text' => $text,
                 'parse_mode' => 'HTML',
                 'disable_web_page_preview' => true,
             ]);
+
+            if (! $response->ok() || ! $response->json('ok')) {
+                Http::timeout(5)->post("https://api.telegram.org/bot{$this->token}/sendMessage", [
+                    'chat_id' => $this->chatId,
+                    'text' => mb_substr(strip_tags(html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8')), 0, self::MAX_LENGTH),
+                    'disable_web_page_preview' => true,
+                ]);
+            }
         } catch (Throwable) {
             // jim o'tkazamiz
         }

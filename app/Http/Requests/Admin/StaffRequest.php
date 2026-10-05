@@ -37,7 +37,7 @@ class StaffRequest extends FormRequest
             'email' => [$isAdmin ? 'required' : 'nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($staff)],
             'phone' => [$hasOther ? 'required' : 'nullable', 'digits:9', Rule::unique('users', 'phone')->ignore($staff)],
             'username' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_]+$/', Rule::unique('users', 'username')->ignore($staff)],
-            'chat_id' => ['nullable', 'digits_between:5,20', Rule::unique('users', 'chat_id')->ignore($staff)],
+            'chat_id' => ['nullable', 'digits_between:5,20', Rule::unique('users', 'chat_id')->ignore($staff)->whereNull('deleted_at')],
             'max_attempts' => ['nullable', 'integer', 'min:1', 'max:100'],
             'password' => [$staff ? 'nullable' : 'required', 'string', 'min:4', 'max:12', 'confirmed'],
             'roles' => ['required', 'array', 'min:1'],
@@ -48,6 +48,7 @@ class StaffRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'chat_id.unique' => 'Bu Telegram ID boshqa foydalanuvchiga biriktirilgan.',
             'phone.digits' => 'Format: 9X XXX XX XX',
             'username.regex' => 'Faqat harf, raqam va _',
             'email.required' => 'Admin uchun email majburiy.',

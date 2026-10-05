@@ -42,6 +42,7 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         if ($pendingChatId) {
+            // Boshqa TIRIK userda band bo'lsa yozmaymiz, lekin login davom etadi (soft-deleted userlar hisobga olinmaydi)
             if (! User::where('chat_id', $pendingChatId)->where('id', '!=', $user->id)->exists()) {
                 $user->forceFill(['chat_id' => $pendingChatId])->save();
             }

@@ -8,7 +8,7 @@ api.interceptors.request.use(async c => {
     return c;
 });
 api.interceptors.response.use(r => r, e => {
-    if (e.response?.status === 401) location.href = '/login';
+    if (e.response?.status === 401) { window.__forceLeave = true; location.href = '/login'; }
     return Promise.reject(e);
 });
 

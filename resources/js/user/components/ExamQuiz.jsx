@@ -49,7 +49,7 @@ export default function ExamQuiz({ data, onRetry }) {
 
     useEffect(() => {
         if (finished) return;
-        const h = e => { e.preventDefault(); e.returnValue = ''; };
+        const h = e => { if (window.__forceLeave) return; e.preventDefault(); e.returnValue = ''; };
         window.addEventListener('beforeunload', h);
         return () => window.removeEventListener('beforeunload', h);
     }, [finished]);

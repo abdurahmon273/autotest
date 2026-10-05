@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Eye, EyeOff, FileQuestion, Image as ImageIcon, LoaderCircle, Plus, SquarePen, Trash2, Upload } from 'lucide-react';
+import { Eye, EyeOff, FileQuestion, Image as ImageIcon, LoaderCircle, Plus, Send, SquarePen, Trash2, Upload } from 'lucide-react';
 import { useDelete, useItem, useSave } from '../lib/hooks';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { messageOf } from '../api';
@@ -61,6 +61,13 @@ export function TelegramSettings() {
     const [hours, setHours] = useState(null);
     const { save, saving, errors } = useSave({ invalidate: ['/settings/telegram'] });
     const notif = useSave({ invalidate: ['/settings/telegram'] });
+    const [text, setText] = useState('');
+    const toast = useToast();
+    const broadcast = useMutation({
+        mutationFn: () => api.post('/settings/telegram/broadcast', { text }).then(r => r.data),
+        onSuccess: d => { toast(d.message); setText(''); },
+        onError: e => toast(messageOf(e), 'error'),
+    });
     if (!data) return null;
     const t = token ?? data.token;
     const h = hours ?? data.task_notification_time;
@@ -80,6 +87,15 @@ export function TelegramSettings() {
                     <Field label="Tugashidan necha soat oldin" error={notif.errors.task_notification_time}><Input type="number" min={1} max={168} value={h} onChange={e => setHours(e.target.value)} /></Field>
                     <p className="mt-2 text-xs text-gray-400">Shu vaqt qolganda studentlarga botdan eslatma yuboriladi.</p>
                     <div className="mt-5 flex justify-end"><SaveButton saving={notif.saving} /></div>
+                </form>
+
+                <form onSubmit={e => { e.preventDefault(); if (text.trim()) broadcast.mutate(); }} className="card p-6 lg:col-span-2">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-4">Barcha studentlarga xabar</h3>
+                    <textarea value={text} onChange={e => setText(e.target.value)} rows={3} maxLength={4000} placeholder="Xabar matni..." className="form-input resize-none" disabled={broadcast.isPending} />
+                    <div className="mt-3 flex items-center justify-between">
+                        <p className="text-xs text-gray-400">Faqat chat ID si bor studentlarga botdan yuboriladi.</p>
+                        <SaveButton saving={broadcast.isPending} icon={Send} disabled={!text.trim() || broadcast.isPending}>Yuborish</SaveButton>
+                    </div>
                 </form>
             </div>
         </>

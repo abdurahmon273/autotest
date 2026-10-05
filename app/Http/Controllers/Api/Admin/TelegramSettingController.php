@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Jobs\BroadcastTelegramJob;
 use App\Models\GlobalSetting;
+use App\Models\Role;
+use App\Models\User;
+use App\Services\TelegramService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -15,6 +19,21 @@ class TelegramSettingController extends ApiController
         $s = GlobalSetting::current();
 
         return ['token' => (string) $s->telegram_bot_token, 'task_notification_time' => $s->task_notification_time ?? GlobalSetting::DEFAULT_TASK_NOTIFICATION_TIME];
+    }
+
+    public function broadcast(Request $request)
+    {
+        $this->can('access_telegram_setting');
+        $data = $request->validate(['text' => ['required', 'string', 'max:4000']], [], ['text' => 'xabar']);
+
+        abort_if((string) GlobalSetting::current()->telegram_bot_token === '', 422, 'Bot token sozlanmagan.');
+
+        $count = User::withRole(Role::STUDENT)->whereNotNull('chat_id')->count();
+        abort_if($count === 0, 422, 'Chat ID si bor studentlar yo‘q.');
+
+        BroadcastTelegramJob::dispatch(TelegramService::escape(trim($data['text'])));
+
+        return $this->ok("{$count} ta studentga yuborish boshlandi.", ['count' => $count]);
     }
 
     public function updateNotification(Request $request)

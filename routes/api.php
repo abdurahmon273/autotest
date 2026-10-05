@@ -93,6 +93,7 @@ Route::prefix('admin')->group(function () {
         Route::get('settings/telegram', [TelegramSettingController::class, 'show']);
         Route::put('settings/telegram', [TelegramSettingController::class, 'update']);
         Route::put('settings/telegram/notification', [TelegramSettingController::class, 'updateNotification']);
+        Route::post('settings/telegram/broadcast', [TelegramSettingController::class, 'broadcast']);
 
         Route::post('settings/random-quiz/generate', [RandomQuizController::class, 'generate']);
         Route::get('settings/general', [GeneralSettingController::class, 'show']);

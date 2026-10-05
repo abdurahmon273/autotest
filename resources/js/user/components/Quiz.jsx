@@ -32,7 +32,7 @@ export default function Quiz({ data, onRestart, restarting }) {
     }, [key, texts, data.id, loadingLang]);
     useEffect(() => {
         if (q.status === FINISHED) return;
-        const h = e => { e.preventDefault(); e.returnValue = ''; };
+        const h = e => { if (window.__forceLeave) return; e.preventDefault(); e.returnValue = ''; };
         window.addEventListener('beforeunload', h);
         return () => window.removeEventListener('beforeunload', h);
     }, [q.status]);

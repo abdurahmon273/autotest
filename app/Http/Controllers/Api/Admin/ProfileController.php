@@ -26,8 +26,8 @@ class ProfileController extends ApiController
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'username' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_]+$/', Rule::unique('users', 'username')->ignore($user->id)],
-            'chat_id' => ['nullable', 'digits_between:5,20', Rule::unique('users', 'chat_id')->ignore($user->id)],
-        ], ['username.regex' => 'Faqat harf, raqam va _', 'email.unique' => 'Bu email boshqa foydalanuvchida mavjud.'], ['email' => 'email']);
+            'chat_id' => ['nullable', 'digits_between:5,20', Rule::unique('users', 'chat_id')->ignore($user->id)->whereNull('deleted_at')],
+        ], ['username.regex' => 'Faqat harf, raqam va _', 'email.unique' => 'Bu email boshqa foydalanuvchida mavjud.', 'chat_id.unique' => 'Bu Telegram ID boshqa foydalanuvchiga biriktirilgan.'], ['email' => 'email']);
 
         $user->update($data);
 

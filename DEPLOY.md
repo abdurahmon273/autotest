@@ -36,10 +36,7 @@ SESSION_SECURE_COOKIE=true
 SANCTUM_STATEFUL_DOMAINS=example.uz,www.example.uz   # domen(lar), portsiz
 
 LOG_CHANNEL=stack
-LOG_STACK=daily,telegram
 LOG_LEVEL=error
-TELEGRAM_LOG_BOT_TOKEN=<bot token>
-TELEGRAM_LOG_CHAT_ID=-100xxxxxxxxxx      # xatolar kanali (bot kanalda admin bo'lishi shart)
 
 ```
 
@@ -112,15 +109,15 @@ PHP: `upload_max_filesize=10M`, `post_max_size=12M`.
 ## 6. Telegram
 Admin → Sozlamalar → Telegram sozlamalari → bot token → Saqlash: `https://example.uz/telegram/webhook` ga `setWebhook` yuboriladi (faqat HTTPS domenida ishlaydi). Webhook handler hozircha bo‘sh (`204`).
 
-## 7. Xatolar Telegram kanali
-@BotFather dan bot yarating (yoki mavjud botdan foydalaning), yopiq kanal oching, botni kanalga **admin** qilib qo'shing.
-Kanal `chat_id` sini olish: kanalga biror xabar yuboring, so'ng
-`https://api.telegram.org/bot<TOKEN>/getUpdates` ni oching — `chat.id` `-100...` ko'rinishida bo'ladi.
-`.env` ga `TELEGRAM_LOG_*` ni yozib, `php artisan config:cache` qiling. Tekshirish:
+## 7. Xatolar Telegram botga
+Bot token va chat ID `config/logging.php` da `telegram` kanalida qo'lda yozilgan (env ishlatilmaydi).
+`stack` kanali doim `single` + `telegram`, shuning uchun `error` va undan yuqori har qanday xato (500 ham) botga keladi.
+Tekshirish:
 ```bash
+php artisan config:cache
 php artisan tinker --execute="Log::error('Telegram log test')"
 ```
-Kanalga `error` va undan yuqori (critical, alert, emergency) darajadagi xatolar keladi. Handler xatosi asosiy ishga ta'sir qilmaydi (jim o'tkaziladi).
+Xabar kelmasa: tokenni va chat ID ni tekshiring, serverdan `api.telegram.org` ga chiqish ochiqligini tekshiring (`curl https://api.telegram.org`).
 
 ## 8. Tekshirish
 - `https://example.uz/` — landing
