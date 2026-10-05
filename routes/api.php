@@ -61,6 +61,7 @@ Route::prefix('admin')->group(function () {
         Route::apiResource('groups', GroupController::class);
 
         Route::get('questions/themes', [QuestionController::class, 'themes']);
+        Route::get('questions/themes/archived', [QuestionController::class, 'archivedThemes']);
         Route::get('questions/languages', [QuestionController::class, 'languages']);
         Route::get('questions/{question}/edit', [QuestionController::class, 'edit']);
         Route::apiResource('questions', QuestionController::class);

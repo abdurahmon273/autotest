@@ -15,19 +15,56 @@ class QuestionController extends ApiController
     {
         $this->can('access_question');
 
+        // theme: faol mavzu id | archived_theme: arxiv mavzu id | theme = "active" — faqat faol mavzulardagi savollar (arxivsiz)
+        $activeOnly = $request->theme === 'active';
+        $theme = $activeOnly ? 0 : (int) $request->theme;
+        $archived = (int) $request->archived_theme;
+
         return Question::withCount('answers')
-            ->with(['themes' => fn ($q) => $q->select('themes.id', 'icon_type', 'icon')->titled()])
+            ->with(['themes' => fn ($q) => $q->withoutGlobalScope('active')->select('themes.id', 'icon_type', 'icon', 'status')->titled()])
             ->select('id', 'type', 'question_krill', 'question_latin', 'image')
-            ->when($request->search, fn ($q, $s) => $q->where(fn ($q) => $q->where('question_krill', 'like', "%{$s}%")->orWhere('question_latin', 'like', "%{$s}%")))
-            ->when($request->theme, fn ($q, $t) => $q->whereHas('themes', fn ($q) => $q->where('themes.id', $t)))
+            ->when($request->search, fn ($q, $s) => $this->applySearch($q, $s))
+            ->when($activeOnly, fn ($q) => $q->whereHas('themes', fn ($q) => $q->where('themes.status', Theme::STATUS_ACTIVE)))
+            ->when($theme || $archived, fn ($q) => $q->whereHas('themes', function ($q) use ($theme, $archived) {
+                $q->withoutGlobalScope('active');
+                if ($theme && $archived) {
+                    $q->whereIn('themes.id', [$theme, $archived]);
+                } elseif ($theme) {
+                    $q->where('themes.id', $theme);
+                } else {
+                    $q->where(fn ($q) => $q->where('themes.id', $archived)->orWhere('themes.status', Theme::STATUS_ACTIVE));
+                }
+            }))
             ->when($request->filled('type'), fn ($q) => $q->where('type', $request->type))
             ->latest('id')
             ->paginate(15);
     }
 
+    /**
+     * Qidiruv: so'zlarga bo'linadi, har so'z savolning krill yoki lotin matnida bo'lishi shart (tartib muhim emas).
+     * Apostrof variantlari (' ‘ ’ ʻ `) LIKE da istalgan bitta belgiga mos keladi.
+     */
+    private function applySearch($query, string $search)
+    {
+        $words = preg_split('/\s+/u', trim($search), -1, PREG_SPLIT_NO_EMPTY);
+
+        return $query->where(function ($q) use ($words) {
+            foreach ($words as $word) {
+                $w = str_replace(['%', '_'], ['\\%', '\\_'], $word);
+                $w = preg_replace("/[\x{2018}\x{2019}\x{02BB}\x{02BC}'`]/u", '_', $w);
+                $q->where(fn ($q) => $q->where('question_krill', 'like', "%{$w}%")->orWhere('question_latin', 'like', "%{$w}%"));
+            }
+        });
+    }
+
     public function themes()
     {
         return Theme::select('id')->titled()->ordered()->get();
+    }
+
+    public function archivedThemes()
+    {
+        return Theme::withInactive()->where('themes.status', '!=', Theme::STATUS_ACTIVE)->select('id')->titled()->ordered()->get();
     }
 
     public function languages()

@@ -10,23 +10,60 @@ import ThemeSelect from '../components/ThemeSelect';
 import { IMAGE_ACCEPT, checkImage } from './Themes';
 import { QUESTION_TYPES, cx } from '../lib/utils';
 
+/** Ro'yxatdagi kichik rasm; sichqoncha ustida bo'lganda shu rasmning o'zi kursor yonida kattaroq ko'rsatiladi (qo'shimcha so'rov yo'q). */
+function HoverImage({ src }) {
+    const [pos, setPos] = useState(null);
+    const move = e => {
+        const W = 420, H = 300, pad = 16;
+        let x = e.clientX + pad, y = e.clientY + pad;
+        if (x + W > window.innerWidth) x = e.clientX - W - pad;
+        if (y + H > window.innerHeight) y = Math.max(8, window.innerHeight - H - 8);
+        setPos({ x, y });
+    };
+    return (
+        <>
+            <img src={src} alt="" className="w-12 h-9 rounded object-cover shrink-0 cursor-zoom-in" onMouseEnter={move} onMouseMove={move} onMouseLeave={() => setPos(null)} />
+            {pos && (
+                <div className="fixed z-[70] pointer-events-none rounded-xl border border-gray-200 bg-white p-1.5 shadow-2xl animate-pop" style={{ left: pos.x, top: pos.y }}>
+                    <img src={src} alt="" className="block max-w-[420px] max-h-[300px] w-auto h-auto rounded-lg object-contain" />
+                </div>
+            )}
+        </>
+    );
+}
+
 export function QuestionsIndex() {
     const { can } = useAuth();
     const [search, setSearch] = useState('');
     const [theme, setTheme] = useState('');
+    const [archived, setArchived] = useState('');
     const [type, setType] = useState('');
     const [page, setPage] = useState(1);
-    const q = useDebounce(search);
-    const { data, isFetching } = useList('/questions', { search: q, theme, type, page });
+    const q = useDebounce(search, 150);
+    const effective = q.trim().length >= 2 ? q.trim() : '';
+    const { data, isFetching } = useList('/questions', { search: effective, theme, archived_theme: archived, type, page });
+    const searching = search.trim().length >= 2 && (search.trim() !== effective || isFetching);
     const { data: themes } = useItem('/questions/themes');
+    const { data: archivedThemes } = useItem('/questions/themes/archived');
     const del = useDelete('/questions');
 
     return (
         <>
             <PageHeader title="Savollar">
-                <select value={theme} onChange={e => { setTheme(e.target.value); setPage(1); }} className="form-input w-44"><option value="">Barcha mavzular</option>{themes?.map(t => <option key={t.id} value={t.id}>{t.title ?? t.title_krill}</option>)}</select>
+                <select value={archived ? `a:${archived}` : theme} onChange={e => { const v = e.target.value; if (v.startsWith('a:')) { setArchived(v.slice(2)); setTheme(''); } else { setArchived(''); setTheme(v); } setPage(1); }} className="form-input w-56">
+                    <option value="">Barcha mavzular</option>
+                    {archivedThemes?.length > 0 && (
+                        <optgroup label="Arxiv mavzular">
+                            {archivedThemes.map(t => <option key={`a${t.id}`} value={`a:${t.id}`}>{t.title ?? t.title_krill}</option>)}
+                        </optgroup>
+                    )}
+                    <option value="active">Arxiv mavzularsiz</option>
+                    <optgroup label="Mavzular">
+                        {themes?.map(t => <option key={t.id} value={t.id}>{t.title ?? t.title_krill}</option>)}
+                    </optgroup>
+                </select>
                 <select value={type} onChange={e => { setType(e.target.value); setPage(1); }} className="form-input w-32"><option value="">Barcha turlar</option>{Object.entries(QUESTION_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
-                <SearchInput value={search} onChange={v => { setSearch(v); setPage(1); }} placeholder="Savol qidirish..." />
+                <SearchInput value={search} onChange={v => { setSearch(v); setPage(1); }} placeholder="Savol qidirish..." loading={searching} />
                 {can('create_question') && <Link to="/admin/questions/create" className="btn-primary"><Plus className="w-4 h-4" /> Qo‘shish</Link>}
             </PageHeader>
             <Table cols={6} loading={isFetching && !data} rows={data?.data} meta={data} onPage={setPage}
@@ -34,9 +71,9 @@ export function QuestionsIndex() {
                 render={qn => (
                     <tr key={qn.id} className="hover:bg-gray-50">
                         <Td className="text-gray-400">{qn.id}</Td>
-                        <Td><div className="flex items-center gap-3">{qn.image_url && <img src={qn.image_url} alt="" className="w-12 h-9 rounded object-cover shrink-0" />}<span className="font-medium text-gray-900 line-clamp-2 max-w-md">{qn.question_latin ?? qn.question_krill}</span></div></Td>
+                        <Td><div className="flex items-center gap-3">{qn.image_url && <HoverImage src={qn.image_url} />}<span className="font-medium text-gray-900 line-clamp-2 max-w-md">{qn.question_latin ?? qn.question_krill}</span></div></Td>
                         <Td><Badge color={qn.type ? 'purple' : 'gray'}>{QUESTION_TYPES[qn.type]}</Badge></Td>
-                        <Td><div className="flex flex-wrap gap-1">{qn.themes.map(t => <Badge key={t.id}><ThemeLabel theme={t} /></Badge>)}</div></Td>
+                        <Td><div className="flex flex-wrap gap-1">{qn.themes.map(t => <Badge key={t.id} color={t.status === 0 ? 'gray' : 'blue'}><ThemeLabel theme={t} /></Badge>)}</div></Td>
                         <Td>{qn.answers_count}</Td>
                         <Td><Actions show={can('show_question') && `/admin/questions/${qn.id}`} edit={can('update_question') && `/admin/questions/${qn.id}/edit`} onDelete={can('delete_question') && (() => del(`/questions/${qn.id}`, 'Savol o‘chirilsinmi?'))} /></Td>
                     </tr>

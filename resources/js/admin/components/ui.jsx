@@ -41,10 +41,10 @@ export const SkeletonRows = ({ cols, rows = 6 }) =>
 
 export const SkeletonBlock = ({ className = 'h-4 w-1/2' }) => <div className={cx('rounded bg-gray-200 animate-pulse', className)} />;
 
-export const SearchInput = ({ value, onChange, placeholder = 'Qidirish...', className = 'w-64' }) => (
+export const SearchInput = ({ value, onChange, placeholder = 'Qidirish...', className = 'w-64', loading = false }) => (
     <div className="relative">
-        <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-        <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className={cx('form-input pl-9', className)} />
+        {loading ? <LoaderCircle className="w-4 h-4 text-admin-primary absolute left-3 top-1/2 -translate-y-1/2 animate-spin" /> : <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />}
+        <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className={cx('form-input pl-9', loading && 'border-admin-primary/50', className)} />
     </div>
 );
 
