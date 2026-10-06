@@ -251,13 +251,26 @@ abstract class QuizService
                 'image' => $q->image_url ?? $defaultImage,
                 'is_default_image' => ! $q->image_url && (bool) $defaultImage,
                 'instruction' => $q->instruction,
-                'answers' => $q->answers->map->only('id', 'text')->values(),
+                'answers' => $this->orderAnswers($result, $q)->map->only('id', 'text')->values(),
                 'status' => $rqs[$q->id]->status->value,
                 'user_answer_id' => $rqs[$q->id]->user_answer_id,
                 'correct_answer_id' => $rqs[$q->id]->status === ResultQuestionStatusEnum::UNANSWERED ? null : $rqs[$q->id]->correct_answer_id,
                 'is_last' => $rqs[$q->id]->is_last,
             ]),
         ];
+    }
+
+    /**
+     * Mavzulashtirilgan testda variantlar har result uchun boshqacha, lekin shu result ichida barqaror tartibda
+     * (sahifa yangilansa ham o'zgarmaydi). Natijaga ta'sir qilmaydi — javob id bo'yicha tekshiriladi.
+     */
+    protected function orderAnswers(Result $result, $question): Collection
+    {
+        if ($this->type() !== QuizEnum::TOPIC) {
+            return $question->answers;
+        }
+
+        return $question->answers->sortBy(fn ($a) => crc32("{$result->id}:{$question->id}:{$a->id}"))->values();
     }
 
     public static function for(QuizEnum $type): static

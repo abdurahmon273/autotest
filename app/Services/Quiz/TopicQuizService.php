@@ -22,6 +22,12 @@ class TopicQuizService extends QuizService
         return Question::whereHas('themes', fn ($q) => $q->where('themes.id', $themeId))->orderBy('id');
     }
 
+    /** Har boshlashda savollar tasodifiy tartibda; tartib result_questions.order ga yoziladi va keyin o'zgarmaydi. */
+    protected function pickQuestions(User $user, ?int $themeId, string $lang): \Illuminate\Support\Collection
+    {
+        return $this->getQuestions($themeId, $lang)->shuffle()->values();
+    }
+
     public function getThemeTests(int $themeId, string $lang = 'krill')
     {
         return $this->getQuestions($themeId, $lang);
