@@ -10,7 +10,10 @@ const FINISHED = 1;
 export default function Quiz({ data, onRestart, restarting }) {
     const [q, setQ] = useState(data);
     const [idx, setIdx] = useState(() => Math.max(0, data.questions.findIndex(x => x.status === 0)));
-    const [picked, setPicked] = useState(null);
+    const [picked, setPickedState] = useState(null);
+    const pickedRef = useRef(null); // ikki tez bosish orasida state yangilanmagan bo'lsa ham to'g'ri ishlashi uchun
+    const setPicked = v => { pickedRef.current = v; setPickedState(v); };
+    const [syncError, setSyncError] = useState(null);
     const [tips, setTips] = useState(false);
     const [modal, setModal] = useState(false);
     const [options, setOptions] = useState(data.homework_options ?? []); // vazifa sifatida saqlash mumkin bo'lgan homeworklar
@@ -55,8 +58,17 @@ export default function Quiz({ data, onRestart, restarting }) {
 
     const answer = useMutation({
         mutationFn: answerId => api.post(`/results/${q.id}/answer`, { question_id: cur.id, answer_id: answerId }).then(r => r.data),
+        onError: async () => {
+            // Tarmoq uzildi yoki server rad etdi: haqiqiy holatni serverdan olib sinxronlaymiz
+            try {
+                const { data: fresh } = await api.get(`/results/${q.id}`, { params: { lang: key } });
+                setQ(prev => ({ ...prev, ...fresh, questions: fresh.questions }));
+                setSyncError(null);
+            } catch { setSyncError('Aloqa uzildi. Internetni tekshirib qayta urinib ko‘ring.'); }
+        },
         onSuccess: (res, answerId) => {
-            const questions = q.questions.map(x => x.id === cur.id ? { ...x, status: res.is_correct ? 1 : 2, user_answer_id: answerId, correct_answer_id: res.correct_answer_id } : x);
+            setSyncError(null);
+            const questions = q.questions.map(x => x.id === cur.id ? { ...x, status: res.is_correct ? 1 : 2, user_answer_id: res.user_answer_id ?? answerId, correct_answer_id: res.correct_answer_id } : x);
             setQ({ ...q, ...res.result, questions });
             if (res.result.status === FINISHED) { setOptions(res.homework_options ?? []); setModal(true); qc.invalidateQueries({ queryKey: ['themes-progress'] }); return; }
             setWaiting(true);
@@ -75,9 +87,11 @@ export default function Quiz({ data, onRestart, restarting }) {
     const attachError = attach.error?.response?.data?.message;
 
     const pick = id => {
-        if (done || answer.isPending || waiting) return;
-        picked === id ? answer.mutate(id) : setPicked(id);
+        if (done || answer.isPending) return;
+        if (pickedRef.current === id) { pickedRef.current = null; answer.mutate(id); } else setPicked(id);
     };
+    // Raqam bo'yicha qo'lda o'tish: avtomatik o'tish taymerini bekor qilamiz, aks holda u boshqa savolga sakratib yuboradi
+    const goTo = i => { clearTimeout(waitRef.current); setWaiting(false); setIdx(i); };
 
     const answerClass = a => {
         if (!done) return picked === a.id ? 'border-yellow-400 ring-2 ring-yellow-400' : 'border-transparent hover:bg-[#4a4f55]';
@@ -115,18 +129,22 @@ export default function Quiz({ data, onRestart, restarting }) {
             </div>
 
                 <div className="order-3 lg:order-2 space-y-3 md:space-y-4">
+                    {syncError && <p className="rounded bg-red-600/80 px-4 py-2 text-sm font-medium">{syncError}</p>}
                     {cur.answers.map((a, i) => (
-                        <button key={a.id} type="button" onClick={() => pick(a.id)} disabled={done || answer.isPending || waiting}
-                            className={cx('w-full flex rounded overflow-hidden border-2 bg-[#3a3f44] text-left text-base md:text-xl transition-colors', answerClass(a))}>
+                        <button key={a.id} type="button" onClick={() => pick(a.id)} disabled={done || answer.isPending}
+                            className={cx('w-full flex rounded overflow-hidden border-2 bg-[#3a3f44] text-left text-base md:text-xl transition-colors touch-manipulation select-none', answerClass(a))}>
                             <span className="w-14 md:w-20 shrink-0 bg-[#6fa8dc] text-white font-bold flex items-center justify-center">F{i + 1}</span>
-                            <span className="px-4 md:px-6 py-3 md:py-4">{a.text}</span>
+                            <span className="px-4 md:px-6 py-3 md:py-4 flex items-center gap-2">
+                                <span>{a.text}</span>
+                                {answer.isPending && answer.variables === a.id && <LoaderCircle className="w-[1em] h-[1em] shrink-0 animate-spin opacity-80" aria-label="Tekshirilmoqda" />}
+                            </span>
                         </button>
                     ))}
                 </div>
             </div>
 
             <div className="mt-8 flex flex-wrap gap-1.5 justify-center lg:justify-end">
-                {q.questions.map((x, i) => <button key={x.id} type="button" onClick={() => setIdx(i)} className={numClass(x)}>{i + 1}</button>)}
+                {q.questions.map((x, i) => <button key={x.id} type="button" onClick={() => goTo(i)} className={cx(numClass(x), 'touch-manipulation')}>{i + 1}</button>)}
             </div>
 
             {modal && (() => {
@@ -162,7 +180,8 @@ export default function Quiz({ data, onRestart, restarting }) {
                                         Vazifa sifatida saqlash{options.length > 1 ? `: ${o.title}` : ''}
                                     </button>
                                 ))}
-                                <button type="button" onClick={proceed} disabled={attach.isPending || restarting} className="w-full rounded-xl bg-[#1f4e79] disabled:opacity-60 py-3 font-bold text-white flex items-center justify-center gap-2">{restarting && <LoaderCircle className="w-5 h-5 animate-spin" />} Davom etish</button>
+                                {/* Vazifa bo'lsa: natija saqlanmaydi va test qaytadan boshlanadi — shuning uchun qizil "Bekor qilish" */}
+                                <button type="button" onClick={proceed} disabled={attach.isPending || restarting} className={cx('w-full rounded-xl disabled:opacity-60 py-3 font-bold text-white flex items-center justify-center gap-2', locked ? 'bg-red-600 hover:bg-red-700' : 'bg-[#1f4e79]')}>{restarting && <LoaderCircle className="w-5 h-5 animate-spin" />} {locked ? 'Bekor qilish' : 'Davom etish'}</button>
                             </div>
                         </div>
                     </div>

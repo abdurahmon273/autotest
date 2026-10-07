@@ -132,7 +132,18 @@ abstract class QuizService
     public function answer(Result $result, int $questionId, int $answerId, int $time = 0): array
     {
         $rq = $result->questions()->where('question_id', $questionId)->firstOrFail();
-        abort_if($rq->status !== ResultQuestionStatusEnum::UNANSWERED, 422, 'Bu savolga javob berilgan.');
+
+        // Idempotent: savolga allaqachon javob berilgan bo'lsa (takroriy bosish, tarmoq uzilib qayta yuborilgan so'rov)
+        // xato emas, saqlangan natijani qaytaramiz — frontend holati server bilan sinxronlanadi.
+        if ($rq->status !== ResultQuestionStatusEnum::UNANSWERED) {
+            return [
+                'is_correct' => $rq->status === ResultQuestionStatusEnum::CORRECT,
+                'correct_answer_id' => $rq->correct_answer_id,
+                'user_answer_id' => $rq->user_answer_id,
+                'already' => true,
+                'result' => $this->summary($result->refresh()),
+            ];
+        }
         abort_if($result->status === ResultStatusEnum::FINISHED, 422, 'Test yakunlangan.');
 
         if ($this->isExpired($result)) {
@@ -146,7 +157,12 @@ abstract class QuizService
 
         $isCorrect = $correct && $correct->id === $answerId;
 
-        DB::transaction(function () use ($result, $rq, $answerId, $correct, $isCorrect, $time) {
+        $applied = DB::transaction(function () use ($result, $rq, $answerId, $correct, $isCorrect, $time) {
+            // Poyga himoyasi: qatorni qulflab, faqat hali javobsiz bo'lsa yozamiz (ikki parallel so'rovdan bittasi o'tadi)
+            $fresh = ResultQuestion::whereKey($rq->id)->lockForUpdate()->first();
+            if ($fresh->status !== ResultQuestionStatusEnum::UNANSWERED) {
+                return false;
+            }
             $result->questions()->where('is_last', 1)->update(['is_last' => 0]);
             $rq->update([
                 'user_answer_id' => $answerId,
@@ -164,11 +180,20 @@ abstract class QuizService
             if ($exceeded || ! $unanswered) {
                 $this->finish($result);
             }
+
+            return true;
         });
+
+        if (! $applied) {
+            $rq->refresh();
+
+            return ['is_correct' => $rq->status === ResultQuestionStatusEnum::CORRECT, 'correct_answer_id' => $rq->correct_answer_id, 'user_answer_id' => $rq->user_answer_id, 'already' => true, 'result' => $this->summary($result->refresh())];
+        }
 
         return [
             'is_correct' => $isCorrect,
             'correct_answer_id' => $correct?->id,
+            'user_answer_id' => $answerId,
             'result' => $this->summary($result->refresh()),
         ];
     }
