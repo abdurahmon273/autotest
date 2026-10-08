@@ -30,11 +30,7 @@
             }
         </script>
         @error('username') <p class="mt-2 text-xs text-red-600">{{ $message }}</p> @enderror
-        <div class="mt-3 flex items-center justify-between">
-            <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
-                <input type="checkbox" name="remember" value="1" @checked(old('remember')) class="h-4 w-4 rounded border-gray-300 text-[#1e3a8a] focus:ring-[#1e3a8a]">
-                Eslab qolish
-            </label>
+        <div class="mt-3 flex items-center justify-end">
             <a href="#" class="text-sm text-gray-500 hover:text-gray-800">Parolni unutdingizmi?</a>
         </div>
         <button type="submit" class="mt-6 w-full rounded-xl bg-[#1e3a8a] py-3 font-semibold text-white hover:bg-[#1e40af]">Tizimga kirish</button>

@@ -32,7 +32,7 @@ return [
     |
     */
 
-    'lifetime' => (int) env('SESSION_LIFETIME', 120),
+    'lifetime' => 180, // 3 soat harakatsizlik (web va Telegram bir xil)
 
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
 

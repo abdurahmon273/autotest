@@ -13,6 +13,8 @@ Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::get('tg', [TelegramAuthController::class, 'show'])->name('tg');
 Route::post('tg/auth', [TelegramAuthController::class, 'auth'])->middleware('throttle:20,1')->name('tg.auth');
+Route::post('tg/confirm', [TelegramAuthController::class, 'confirm'])->middleware('throttle:20,1')->name('tg.confirm');
+Route::post('tg/other', [TelegramAuthController::class, 'other'])->name('tg.other');
 
 Route::view('app/{any?}', 'user.app')->where('any', '.*')->middleware(['auth', 'single.session'])->name('app');
 

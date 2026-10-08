@@ -38,7 +38,7 @@ class AuthController extends Controller
 
         $pendingChatId = $request->session()->pull(TelegramAuthController::SESSION_PENDING);
 
-        Auth::login($user, $request->boolean('remember') || (bool) $pendingChatId);
+        Auth::login($user);
         $request->session()->regenerate();
 
         if ($pendingChatId) {
@@ -47,18 +47,16 @@ class AuthController extends Controller
                 $user->forceFill(['chat_id' => $pendingChatId])->save();
             }
             $request->session()->put(TelegramAuthController::SESSION_FLAG, true);
-        } else {
-            $user->forceFill(['session_id' => $request->session()->getId()])->save();
         }
+        // Bitta qurilma: web ham, Telegram ham shu session_id bilan tekshiriladi (3 soat harakatsizlikdan keyin qayta kirish)
+        $user->forceFill(['session_id' => $request->session()->getId()])->save();
 
         return redirect()->route('app');
     }
 
     public function logout(Request $request)
     {
-        if (! $request->session()->get(TelegramAuthController::SESSION_FLAG)) {
-            $request->user()?->forceFill(['session_id' => null])->save();
-        }
+        $request->user()?->forceFill(['session_id' => null])->save();
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
