@@ -12,6 +12,9 @@
     --font-inter: 'Inter', sans-serif;
 
     --color-admin-primary: rgb(59 91 219);
+    /* Foydalanuvchi tomoni uchun yagona qizil: to'q, och emas */
+    --color-brand-red: #c62828;
+    --color-brand-red-dark: #a51f1f;
     --color-admin-primary-hover: rgb(48 76 190);
 
     --animate-dropdown-enter: dropdown-enter 0.15s ease-out;

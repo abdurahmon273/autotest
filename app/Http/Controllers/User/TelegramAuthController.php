@@ -50,7 +50,7 @@ class TelegramAuthController extends Controller
         return ['user' => ['name' => $user->name, 'username' => $user->username, 'phone' => $user->phone_formatted ?? $user->phone]];
     }
 
-    /** "Kirish" bosilganda: tasdiqlangan user bilan kirish. session_id yoziladi — bitta qurilma qoidasi web bilan bir xil. */
+    /** "Kirish" bosilganda: tasdiqlangan user bilan kirish. session_id yozilmaydi — web sessiyaga xalaqit bermaydi. */
     public function confirm(Request $request)
     {
         $id = $request->session()->pull(self::SESSION_CONFIRM);
@@ -62,8 +62,7 @@ class TelegramAuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
         $request->session()->put(self::SESSION_FLAG, true);
-        // Web bilan bir xil: oxirgi kirgan qurilma ishlaydi, oldingisi chiqarib yuboriladi
-        $user->forceFill(['session_id' => $request->session()->getId()])->save();
+        // session_id yozilmaydi: Telegram va web bir vaqtda ishlaydi
 
         return ['redirect' => route('app')];
     }

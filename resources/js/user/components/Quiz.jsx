@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { BookmarkCheck, Lightbulb, LoaderCircle, RotateCcw } from 'lucide-react';
 import api from '../api';
 import { useLang } from '../lib';
+import ZoomImage from './ZoomImage';
 
 const cx = (...a) => a.filter(Boolean).join(' ');
 const FINISHED = 1;
@@ -96,11 +97,11 @@ export default function Quiz({ data, onRestart, restarting }) {
     const answerClass = a => {
         if (!done) return picked === a.id ? 'border-yellow-400 ring-2 ring-yellow-400' : 'border-transparent hover:bg-[#4a4f55]';
         if (a.id === cur.correct_answer_id) return 'border-transparent !bg-green-600';
-        if (a.id === cur.user_answer_id) return 'border-transparent !bg-red-600';
+        if (a.id === cur.user_answer_id) return 'border-transparent !bg-brand-red';
         return 'border-transparent opacity-70';
     };
 
-    const numClass = x => cx('h-9 w-9 rounded border text-sm font-semibold', x.id === cur.id ? 'ring-2 ring-white' : '', x.status === 1 ? 'bg-green-600 border-green-500' : x.status === 2 ? 'bg-red-600 border-red-500' : 'bg-white/10 border-white/40 hover:bg-white/20');
+    const numClass = x => cx('h-9 w-9 rounded border text-sm font-semibold', x.id === cur.id ? 'ring-2 ring-white' : '', x.status === 1 ? 'bg-green-600 border-green-500' : x.status === 2 ? 'bg-brand-red border-brand-red' : 'bg-white/10 border-white/40 hover:bg-white/20');
 
     return (
         <div className="flex-1 px-4 md:px-16 py-6 md:py-8">
@@ -115,7 +116,7 @@ export default function Quiz({ data, onRestart, restarting }) {
             <div className={cx('grid gap-4 md:gap-6', cur.image ? 'lg:grid-cols-2' : 'grid-cols-1')}>
             {cur.image && (
                 <div className="order-1 lg:order-3 rounded border border-white/70 bg-black/40 flex items-center justify-center overflow-hidden">
-                    <img src={cur.image} alt="" className="max-h-[16rem] md:max-h-[32rem] w-full object-contain" />
+                    <ZoomImage src={cur.image} className="max-h-[16rem] md:max-h-[32rem] w-full object-contain cursor-zoom-in" />
                 </div>
             )}
             <div className={cx('order-2 lg:order-1 lg:col-span-2 relative rounded border border-white/70 bg-[#3a3f44] px-4 md:px-6 py-4 md:py-5 text-lg md:text-3xl font-semibold', cur.instruction && done && 'pr-14 md:pr-16')}>
@@ -129,7 +130,7 @@ export default function Quiz({ data, onRestart, restarting }) {
             </div>
 
                 <div className="order-3 lg:order-2 space-y-3 md:space-y-4">
-                    {syncError && <p className="rounded bg-red-600/80 px-4 py-2 text-sm font-medium">{syncError}</p>}
+                    {syncError && <p className="rounded bg-brand-red/80 px-4 py-2 text-sm font-medium">{syncError}</p>}
                     {cur.answers.map((a, i) => (
                         <button key={a.id} type="button" onClick={() => pick(a.id)} disabled={done || answer.isPending}
                             className={cx('w-full flex rounded overflow-hidden border-2 bg-[#3a3f44] text-left text-base md:text-xl transition-colors touch-manipulation select-none', answerClass(a))}>
@@ -181,7 +182,7 @@ export default function Quiz({ data, onRestart, restarting }) {
                                     </button>
                                 ))}
                                 {/* Vazifa bo'lsa: natija saqlanmaydi va test qaytadan boshlanadi — shuning uchun qizil "Bekor qilish" */}
-                                <button type="button" onClick={proceed} disabled={attach.isPending || restarting} className={cx('w-full rounded-xl disabled:opacity-60 py-3 font-bold text-white flex items-center justify-center gap-2', locked ? 'bg-red-600 hover:bg-red-700' : 'bg-[#1f4e79]')}>{restarting && <LoaderCircle className="w-5 h-5 animate-spin" />} {locked ? 'Bekor qilish' : 'Davom etish'}</button>
+                                <button type="button" onClick={proceed} disabled={attach.isPending || restarting} className={cx('w-full rounded-xl disabled:opacity-60 py-3 font-bold text-white flex items-center justify-center gap-2', locked ? 'bg-brand-red hover:bg-brand-red-dark' : 'bg-[#1f4e79]')}>{restarting && <LoaderCircle className="w-5 h-5 animate-spin" />} {locked ? 'Bekor qilish' : 'Davom etish'}</button>
                             </div>
                         </div>
                     </div>

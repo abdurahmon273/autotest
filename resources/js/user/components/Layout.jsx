@@ -65,7 +65,7 @@ export default function Layout() {
                                             className="w-full rounded-xl border border-amber-300/30 bg-amber-400/10 hover:bg-amber-400/20 px-4 py-3 text-left transition-colors">
                                             <span className="flex items-center justify-between gap-3">
                                                 <span className="text-[15px] font-medium truncate">{h.title}</span>
-                                                <span className={`shrink-0 text-xs font-bold px-2 py-0.5 rounded-full ${h.status === 2 ? 'bg-green-500/30 text-green-200' : h.status === 0 ? 'bg-red-500/30 text-red-200' : 'bg-white/10 text-white/70'}`}>{h.percentage}%</span>
+                                                <span className={`shrink-0 text-xs font-bold px-2 py-0.5 rounded-full ${h.status === 2 ? 'bg-green-500/30 text-green-200' : h.status === 0 ? 'bg-brand-red/30 text-red-200' : 'bg-white/10 text-white/70'}`}>{h.percentage}%</span>
                                             </span>
                                             <span className="mt-1 block text-xs text-white/50 truncate">{h.theme_title} · {h.tests_count}/{h.min_test_count} test · min {h.passing_percentage}%</span>
                                         </button>

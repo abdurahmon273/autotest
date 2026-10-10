@@ -20,8 +20,8 @@ export default function HomeworkBanner({ themeId, enabled = true }) {
                     const current = themeId && Number(themeId) === h.theme_id; // joriy mavzu: solid rang
                     const c = {
                         red: current
-                            ? { box: 'border-red-400 bg-red-500 text-white', icon: 'bg-white/20 text-white', pct: 'text-white' }
-                            : { box: 'border-red-400/60 bg-red-500/20 hover:bg-red-500/30 text-white', icon: 'bg-red-500 text-white', pct: 'text-red-200' },
+                            ? { box: 'border-red-400 bg-brand-red text-white', icon: 'bg-white/20 text-white', pct: 'text-white' }
+                            : { box: 'border-red-400/60 bg-brand-red/20 hover:bg-brand-red/30 text-white', icon: 'bg-brand-red text-white', pct: 'text-red-200' },
                         amber: current
                             ? { box: 'border-amber-300 bg-amber-400 text-gray-900', icon: 'bg-gray-900/10 text-gray-900', pct: 'text-gray-900' }
                             : { box: 'border-amber-300/60 bg-amber-400/20 hover:bg-amber-400/30 text-white', icon: 'bg-amber-400 text-gray-900', pct: 'text-amber-200' },

@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Lightbulb, LoaderCircle, RotateCcw, X } from 'lucide-react';
 import api from '../api';
 import { useLang } from '../lib';
+import ZoomImage from './ZoomImage';
 
 const cx = (...a) => a.filter(Boolean).join(' ');
 const FINISHED = 1;
@@ -139,11 +140,11 @@ export default function ExamQuiz({ data, onRetry }) {
     const answerClass = a => {
         if (!done) return confirm?.id === a.id ? 'border-yellow-400 ring-2 ring-yellow-400' : 'border-transparent hover:bg-[#4a4f55]';
         if (a.id === cur.correct_answer_id) return 'border-transparent !bg-green-600';
-        if (a.id === cur.user_answer_id) return 'border-transparent !bg-red-600';
+        if (a.id === cur.user_answer_id) return 'border-transparent !bg-brand-red';
         return 'border-transparent opacity-70';
     };
 
-    const numClass = x => cx('h-9 w-9 rounded border text-sm font-semibold', x.id === cur.id ? 'ring-2 ring-white' : '', x.status === 1 ? 'bg-green-600 border-green-500' : x.status === 2 ? 'bg-red-600 border-red-500' : 'bg-white/10 border-white/40 hover:bg-white/20');
+    const numClass = x => cx('h-9 w-9 rounded border text-sm font-semibold', x.id === cur.id ? 'ring-2 ring-white' : '', x.status === 1 ? 'bg-green-600 border-green-500' : x.status === 2 ? 'bg-brand-red border-brand-red' : 'bg-white/10 border-white/40 hover:bg-white/20');
 
     const timerUrgent = !finished && secondsLeft <= 60;
 
@@ -161,7 +162,7 @@ export default function ExamQuiz({ data, onRetry }) {
 
             <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
                 <div className="order-1 lg:order-3 relative rounded border border-white/70 bg-black/40 flex items-center justify-center overflow-hidden min-h-[12rem]">
-                    {cur.image ? <img src={cur.image} alt="" className="max-h-[16rem] md:max-h-[32rem] w-full object-contain" /> : <span className="text-white/30 text-sm">Rasm yo‘q</span>}
+                    {cur.image ? <ZoomImage src={cur.image} className="max-h-[16rem] md:max-h-[32rem] w-full object-contain cursor-zoom-in" /> : <span className="text-white/30 text-sm">Rasm yo‘q</span>}
                     <span className={cx('absolute top-3 right-4 text-lg md:text-2xl font-medium tabular-nums drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]', timerUrgent ? 'text-red-500 animate-pulse' : 'text-white')}>{fmt(secondsLeft)}</span>
                 </div>
 
@@ -191,15 +192,22 @@ export default function ExamQuiz({ data, onRetry }) {
             </div>
 
             {confirm && (
-                <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-40 flex items-center justify-center p-3 sm:p-4">
                     <div className="absolute inset-0 bg-black/60" onClick={() => !answer.isPending && setConfirm(null)} />
-                    <div className="relative w-full max-w-md rounded-2xl bg-white p-6 text-gray-900 shadow-2xl animate-pop">
-                        <button type="button" onClick={() => setConfirm(null)} disabled={answer.isPending} className="absolute right-3 top-3 h-8 w-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center"><X className="w-4 h-4" /></button>
-                        <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Tanlangan javob</p>
-                        <p className="mt-3 text-lg md:text-xl font-semibold leading-snug">{confirm.text}</p>
-                        <div className="mt-6 grid grid-cols-2 gap-3">
-                            <button type="button" onClick={() => setConfirm(null)} disabled={answer.isPending} className="rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-60 py-3 font-bold text-white">Bekor qilish</button>
-                            <button type="button" onClick={() => answer.mutate(confirm.id)} disabled={answer.isPending} className="rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-60 py-3 font-bold text-white flex items-center justify-center gap-2">
+                    <div className="relative w-full max-w-md rounded-2xl bg-white text-gray-900 shadow-2xl animate-pop overflow-hidden">
+                        {/* Sarlavha + qizil X */}
+                        <div className="flex items-center justify-between px-4 pt-4 pb-3">
+                            <p className="text-sm font-bold uppercase tracking-wide text-gray-500">Tanlangan javob</p>
+                            <button type="button" onClick={() => setConfirm(null)} disabled={answer.isPending} aria-label="Yopish" className="h-9 w-9 rounded-xl bg-brand-red hover:bg-brand-red-dark disabled:opacity-60 text-white flex items-center justify-center shadow-sm"><X className="w-5 h-5" strokeWidth={2.5} /></button>
+                        </div>
+                        {/* Variant matni: to'liq kenglikda kulrang fon, bo'sh joy minimal */}
+                        <div className="bg-gray-200 px-4 py-4 border-y border-gray-300">
+                            <p className="text-lg md:text-xl font-semibold leading-snug text-gray-900">{confirm.text}</p>
+                        </div>
+                        {/* Tugmalar: ikki qator, to'liq kenglik */}
+                        <div className="p-4 space-y-3">
+                            <button type="button" onClick={() => setConfirm(null)} disabled={answer.isPending} className="w-full rounded-xl bg-brand-red hover:bg-brand-red-dark disabled:opacity-60 py-3.5 text-lg font-bold text-white">Bekor qilish</button>
+                            <button type="button" onClick={() => answer.mutate(confirm.id)} disabled={answer.isPending} className="w-full rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-60 py-3.5 text-lg font-bold text-white flex items-center justify-center gap-2">
                                 {answer.isPending && <LoaderCircle className="w-5 h-5 animate-spin" />} Tasdiqlaysizmi?
                             </button>
                         </div>
@@ -218,7 +226,7 @@ export default function ExamQuiz({ data, onRetry }) {
                         <p className="mt-1 text-xs text-gray-400">Natija saqlandi</p>
                         {q.is_passed
                             ? <button type="button" onClick={() => setModal(false)} className="mt-6 w-full rounded-xl bg-[#1f4e79] py-3 font-bold text-white">Davom etish</button>
-                            : <button type="button" onClick={() => setModal(false)} className="mt-6 w-full rounded-xl bg-red-600 hover:bg-red-700 py-3 font-bold text-white flex items-center justify-center gap-2"><RotateCcw className="w-5 h-5" /> Qayta urinish</button>}
+                            : <button type="button" onClick={() => setModal(false)} className="mt-6 w-full rounded-xl bg-brand-red hover:bg-brand-red-dark py-3 font-bold text-white flex items-center justify-center gap-2"><RotateCcw className="w-5 h-5" /> Qayta urinish</button>}
                     </div>
                 </div>
             )}
