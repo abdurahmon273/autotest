@@ -47,19 +47,16 @@ class AuthController extends Controller
                 $user->forceFill(['chat_id' => $pendingChatId])->save();
             }
             $request->session()->put(TelegramAuthController::SESSION_FLAG, true);
-        } else {
-            // Faqat web: bitta qurilma qoidasi (Telegram sessiyasi bunga kirmaydi)
-            $user->forceFill(['session_id' => $request->session()->getId()])->save();
         }
+        // Bitta qurilma: web ham, Telegram ham shu session_id bilan tekshiriladi
+        $user->forceFill(['session_id' => $request->session()->getId()])->save();
 
         return redirect()->route('app');
     }
 
     public function logout(Request $request)
     {
-        if (! $request->session()->get(TelegramAuthController::SESSION_FLAG)) {
-            $request->user()?->forceFill(['session_id' => null])->save();
-        }
+        $request->user()?->forceFill(['session_id' => null])->save();
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

@@ -13,11 +13,7 @@ class SingleSession
     {
         $user = $request->user();
 
-        // Telegram orqali kirilgan sessiya web "bitta qurilma" qoidasidan ozod — ikkalasi parallel ishlaydi
-        if ($request->session()->get(\App\Http\Controllers\User\TelegramAuthController::SESSION_FLAG)) {
-            return $next($request);
-        }
-
+        // Bitta qurilma: web ham, Telegram ham shu session_id bilan tekshiriladi — oxirgi kirgan qurilma ishlaydi
         if ($user && ! $user->is_admin && $user->session_id !== $request->session()->getId()) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();
