@@ -25,16 +25,8 @@ class QuestionController extends ApiController
             ->select('id', 'type', 'question_krill', 'question_latin', 'image')
             ->when($request->search, fn ($q, $s) => $this->applySearch($q, $s))
             ->when($activeOnly, fn ($q) => $q->whereHas('themes', fn ($q) => $q->where('themes.status', Theme::STATUS_ACTIVE)))
-            ->when($theme || $archived, fn ($q) => $q->whereHas('themes', function ($q) use ($theme, $archived) {
-                $q->withoutGlobalScope('active');
-                if ($theme && $archived) {
-                    $q->whereIn('themes.id', [$theme, $archived]);
-                } elseif ($theme) {
-                    $q->where('themes.id', $theme);
-                } else {
-                    $q->where(fn ($q) => $q->where('themes.id', $archived)->orWhere('themes.status', Theme::STATUS_ACTIVE));
-                }
-            }))
+            // Tanlangan mavzu (faol yoki arxiv) — faqat shu mavzuga biriktirilgan savollar
+            ->when($theme || $archived, fn ($q) => $q->whereHas('themes', fn ($q) => $q->withoutGlobalScope('active')->where('themes.id', $theme ?: $archived)))
             ->when($request->filled('type'), fn ($q) => $q->where('type', $request->type))
             ->latest('id')
             ->paginate(15);
@@ -82,7 +74,7 @@ class QuestionController extends ApiController
     public function show(Question $question)
     {
         $this->can('show_question');
-        $question->load(['themes' => fn ($q) => $q->select('themes.id', 'icon_type', 'icon')->titled(), 'answers' => fn ($q) => $q->select('id', 'question_id', 'text_krill', 'text_latin', 'is_correct', 'order')]);
+        $question->load(['themes' => fn ($q) => $q->withoutGlobalScope('active')->select('themes.id', 'icon_type', 'icon', 'status')->titled(), 'answers' => fn ($q) => $q->select('id', 'question_id', 'text_krill', 'text_latin', 'is_correct', 'order')]);
 
         return $question;
     }
@@ -90,7 +82,7 @@ class QuestionController extends ApiController
     public function edit(Question $question)
     {
         $this->can('update_question');
-        $question->load(['themes' => fn ($q) => $q->select('themes.id', 'icon_type', 'icon')->titled(), 'answers' => fn ($q) => $q->select('id', 'question_id', 'text_krill', 'text_latin', 'is_correct', 'order')]);
+        $question->load(['themes' => fn ($q) => $q->withoutGlobalScope('active')->select('themes.id', 'icon_type', 'icon', 'status')->titled(), 'answers' => fn ($q) => $q->select('id', 'question_id', 'text_krill', 'text_latin', 'is_correct', 'order')]);
 
         return $question;
     }

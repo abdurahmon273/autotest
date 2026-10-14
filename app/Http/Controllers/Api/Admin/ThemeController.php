@@ -52,11 +52,13 @@ class ThemeController extends ApiController
 
     public function search(Request $request)
     {
-        return Theme::select('id', 'title', 'icon')
+        // Faol va arxiv mavzular birga; arxivlar har doim ro'yxat oxirida
+        return Theme::withInactive()->select('id', 'title', 'title_krill', 'icon_type', 'icon', 'status')
             ->whereNotIn('id', (array) $request->input('exclude', []))
             ->when($request->search, fn ($q, $s) => $q->where(fn ($q) => $q->where('themes.title', 'like', "%{$s}%")->orWhere('title_krill', 'like', "%{$s}%")))
+            ->orderByDesc('status')
             ->ordered()
-            ->limit(10)
+            ->limit(40)
             ->get();
     }
 
