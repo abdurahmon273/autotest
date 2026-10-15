@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api, { messageOf } from '../api';
 import { useToast } from './toast';
@@ -11,6 +12,41 @@ export function useDebounce(value, ms = 300) {
         return () => clearTimeout(t);
     }, [value, ms]);
     return v;
+}
+
+/**
+ * Ro'yxat filtrlari va sahifasi URL query'da saqlanadi (?page=4&theme=3...), shuning uchun
+ * edit/show'dan qaytganda, F5 bosilganda yoki brauzer "orqaga" tugmasida holat o'sha-o'sha qoladi.
+ * `defaults` — kalitlar va bo'sh qiymatlari. Bo'sh qiymat URL'ga yozilmaydi.
+ * Qaytaradi: [state, set] — set(key, value) yoki set({key: value, ...}); page bo'lmagan kalit o'zgarsa page 1 bo'ladi.
+ * Oxirgi ro'yxat URL'i sessionStorage'da `list:<pathname>` kaliti bilan saqlanadi (useListBack uchun).
+ */
+export function useListState(defaults) {
+    const [sp, setSp] = useSearchParams();
+    const { pathname } = useLocation();
+    const state = {};
+    for (const k of Object.keys(defaults)) {
+        const v = sp.get(k);
+        state[k] = v === null ? defaults[k] : (typeof defaults[k] === 'number' ? Number(v) || defaults[k] : v);
+    }
+    useEffect(() => { sessionStorage.setItem(`list:${pathname}`, pathname + (sp.toString() ? `?${sp}` : '')); }, [pathname, sp]);
+    const set = useCallback((key, value) => {
+        const patch = typeof key === 'object' ? key : { [key]: value };
+        if (!('page' in patch) && 'page' in defaults) patch.page = defaults.page;
+        setSp(prev => {
+            const next = new URLSearchParams(prev);
+            for (const [k, v] of Object.entries(patch)) {
+                if (v === '' || v === null || v === undefined || v === defaults[k]) next.delete(k); else next.set(k, String(v));
+            }
+            return next;
+        }, { replace: true });
+    }, [setSp, defaults]);
+    return [state, set];
+}
+
+/** Ro'yxatga qaytish manzili: oxirgi saqlangan filtr/sahifa bilan, bo'lmasa `fallback`. */
+export function listBack(fallback) {
+    return sessionStorage.getItem(`list:${fallback}`) ?? fallback;
 }
 
 export function useList(url, params) {

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Check, ChevronDown, Eye, Image, ImagePlus, Lightbulb, Plus, SquarePen, Text, Trash2, X } from 'lucide-react';
 import { useAuth } from '../lib/auth';
-import { useDebounce, useDelete, useItem, useList, useSave } from '../lib/hooks';
+import { listBack, useDebounce, useDelete, useItem, useList, useListState, useSave } from '../lib/hooks';
 import { useLightbox } from '../lib/lightbox';
 import { Actions, BackLink, Badge, Field, PageHeader, SaveButton, SearchInput, Table, Th, Td } from '../components/ui';
 import ThemeLabel from '../components/ThemeLabel';
@@ -34,11 +34,9 @@ function HoverImage({ src }) {
 
 export function QuestionsIndex() {
     const { can } = useAuth();
-    const [search, setSearch] = useState('');
-    const [theme, setTheme] = useState('');
-    const [archived, setArchived] = useState('');
-    const [type, setType] = useState('');
-    const [page, setPage] = useState(1);
+    // Filtrlar va sahifa URL'da (?page=4&theme=3) — edit/show'dan qaytganda o'sha joyda qoladi.
+    const [{ search, theme, archived, type, page }, setState] = useListState({ search: '', theme: '', archived: '', type: '', page: 1 });
+    const setPage = p => setState({ page: p });
     const q = useDebounce(search, 150);
     const effective = q.trim().length >= 2 ? q.trim() : '';
     const { data, isFetching } = useList('/questions', { search: effective, theme, archived_theme: archived, type, page });
@@ -50,7 +48,7 @@ export function QuestionsIndex() {
     return (
         <>
             <PageHeader title="Savollar">
-                <select value={archived ? `a:${archived}` : theme} onChange={e => { const v = e.target.value; if (v.startsWith('a:')) { setArchived(v.slice(2)); setTheme(''); } else { setArchived(''); setTheme(v); } setPage(1); }} className="form-input w-56">
+                <select value={archived ? `a:${archived}` : theme} onChange={e => { const v = e.target.value; setState(v.startsWith('a:') ? { archived: v.slice(2), theme: '' } : { archived: '', theme: v }); }} className="form-input w-56">
                     <option value="">Barcha mavzular</option>
                     {archivedThemes?.length > 0 && (
                         <optgroup label="Arxiv mavzular">
@@ -62,8 +60,8 @@ export function QuestionsIndex() {
                         {themes?.map(t => <option key={t.id} value={t.id}>{t.title ?? t.title_krill}</option>)}
                     </optgroup>
                 </select>
-                <select value={type} onChange={e => { setType(e.target.value); setPage(1); }} className="form-input w-32"><option value="">Barcha turlar</option>{Object.entries(QUESTION_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
-                <SearchInput value={search} onChange={v => { setSearch(v); setPage(1); }} placeholder="Savol qidirish..." loading={searching} />
+                <select value={type} onChange={e => setState('type', e.target.value)} className="form-input w-32"><option value="">Barcha turlar</option>{Object.entries(QUESTION_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
+                <SearchInput value={search} onChange={v => setState('search', v)} placeholder="Savol qidirish..." loading={searching} />
                 {can('create_question') && <Link to="/admin/questions/create" className="btn-primary"><Plus className="w-4 h-4" /> Qo‘shish</Link>}
             </PageHeader>
             <Table cols={6} loading={isFetching && !data} rows={data?.data} meta={data} onPage={setPage}
@@ -97,7 +95,8 @@ export function QuestionForm() {
     const [imageError, setImageError] = useState(null);
     const [tips, setTips] = useState(null);
     const file = useRef(null);
-    const { save, saving, errors } = useSave({ onSuccess: () => nav('/admin/questions'), invalidate: ['/questions', `/questions/${id}`, `/questions/${id}/edit`] });
+    const back = listBack('/admin/questions');
+    const { save, saving, errors } = useSave({ onSuccess: () => nav(back), invalidate: ['/questions', `/questions/${id}`, `/questions/${id}/edit`] });
     if ((id && !data) || !langs) return null;
 
     const L = lang ?? (langs.find(l => l.default) ?? langs[0]).key;
@@ -124,7 +123,7 @@ export function QuestionForm() {
     return (
         <form onSubmit={submit}>
             <PageHeader title={id ? 'Savolni tahrirlash' : 'Savol qo‘shish'}>
-                <Link to="/admin/questions" className="btn-secondary">Bekor qilish</Link>
+                <Link to={back} className="btn-secondary">Bekor qilish</Link>
                 <SaveButton saving={saving} />
             </PageHeader>
             <div className="mb-5 inline-flex rounded-lg border border-gray-200 bg-white p-1">
@@ -218,7 +217,7 @@ export function QuestionShow() {
     return (
         <>
             <PageHeader title="Savol">
-                <BackLink to="/admin/questions" />
+                <BackLink to={listBack('/admin/questions')} />
                 {can('update_question') && <Link to={`/admin/questions/${id}/edit`} className="btn-primary"><SquarePen className="w-4 h-4" /> Tahrirlash</Link>}
             </PageHeader>
             <div className="card p-6 max-w-3xl">
