@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\ActiveUserController;
 use App\Http\Controllers\Api\Admin\AuthController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\GeneralSettingController;
@@ -32,6 +33,10 @@ Route::prefix('admin')->group(function () {
         Route::get('dashboard', DashboardController::class);
         Route::get('dashboard/charts', [DashboardController::class, 'charts']);
 
+        Route::get('active-users', [ActiveUserController::class, 'index']);
+        Route::get('active-users/stats', [ActiveUserController::class, 'stats']);
+        Route::get('active-users/groups', [ActiveUserController::class, 'groups']);
+
         Route::get('results/groups', [GroupResultController::class, 'index']);
         Route::get('results/groups/{id}', [GroupResultController::class, 'show']);
         Route::get('results/groups/{id}/students', [GroupResultController::class, 'students']);
@@ -47,6 +52,8 @@ Route::prefix('admin')->group(function () {
         Route::get('results/students/{id}/trainings', [StudentResultController::class, 'trainings']);
         Route::get('results/students/{id}/themes', [StudentResultController::class, 'themes']);
         Route::get('students/manage', [StudentController::class, 'manage']);
+        Route::get('students/finance', [StudentController::class, 'finance']);
+        Route::put('students/{id}/payment', [StudentController::class, 'payment']);
         Route::get('students/groups', [StudentController::class, 'groups']);
         Route::put('students/{id}/attempts', [StudentController::class, 'attempts']);
         Route::get('students/search', [StudentController::class, 'search']);

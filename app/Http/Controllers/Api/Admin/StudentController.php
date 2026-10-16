@@ -31,6 +31,39 @@ class StudentController extends PersonController
             ->paginate(15);
     }
 
+    /** O'quvchilar moliyasi: ro'yxat + to'lov filtri. */
+    public function finance(Request $request)
+    {
+        $this->can('access_student');
+
+        return \App\Models\User::withRole(Role::STUDENT)
+            ->select('id', 'name', 'phone', 'username', 'payment', 'created_at')
+            ->with('groups:groups.id,name')
+            ->when($request->search, fn ($q, $s) => $q->where(fn ($q) => $q
+                ->where('name', 'like', "%{$s}%")
+                ->orWhere('username', 'like', "%{$s}%")
+                ->orWhere('phone', 'like', "%{$s}%")))
+            ->when($request->status === 'paid', fn ($q) => $q->where('payment', '>', 0))
+            ->when($request->status === 'unpaid', fn ($q) => $q->where(fn ($q) => $q->whereNull('payment')->orWhere('payment', 0)))
+            ->when($request->filled('from'), fn ($q) => $q->where('payment', '>', (int) $request->from))
+            ->when($request->filled('to'), fn ($q) => $q->where('payment', '<', (int) $request->to))
+            ->when($request->group_id, fn ($q, $g) => $q->whereHas('groups', fn ($q) => $q->where('groups.id', $g)))
+            ->latest('id')
+            ->paginate(15);
+    }
+
+    /** To'lov summasini saqlash. payment bo'sh — "ko'rsatilmasin" (null). */
+    public function payment(Request $request, int $id)
+    {
+        $this->can('update_student');
+        $data = $request->validate(['payment' => ['nullable', 'integer', 'min:0', 'max:999999999999']], [], ['payment' => 'summa']);
+
+        $student = $this->find($id);
+        $student->update(['payment' => $data['payment'] ?? null]);
+
+        return $this->ok('Saqlandi.', ['payment' => $student->payment]);
+    }
+
     /** Filtr uchun guruhlar ro'yxati. */
     public function groups()
     {

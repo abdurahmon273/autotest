@@ -9,6 +9,7 @@ import { LightboxProvider } from './lib/lightbox';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import ActiveUsers from './pages/ActiveUsers';
 import { PeopleIndex, PersonShow } from './pages/People';
 import { StaffForm, StaffIndex, StaffShow } from './pages/Staff';
 import { GroupForm, GroupsIndex } from './pages/Groups';
@@ -18,6 +19,7 @@ import { ThemeForm, ThemesIndex } from './pages/Themes';
 import { QuestionForm, QuestionShow, QuestionsIndex } from './pages/Questions';
 import Profile from './pages/Profile';
 import StudentsManage from './pages/StudentsManage';
+import StudentsFinance from './pages/StudentsFinance';
 import StudentResults from './pages/StudentResults';
 import StudentShow from './pages/StudentShow';
 import GroupResults from './pages/GroupResults';
@@ -73,7 +75,8 @@ createRoot(document.getElementById('app')).render(
                                             <Route path=":groupId/:id/edit" element={<HomeworkForm />} />
                                         </Route>
                                         <Route path="students-manage" element={<StudentsManage />} />
-                                        <Route path="active-users" element={<Placeholder title="Faol foydalanuvchilar" />} />
+                                        <Route path="students-finance" element={<StudentsFinance />} />
+                                        <Route path="active-users" element={<ActiveUsers />} />
                                         <Route path="results/students" element={<StudentResults />} />
                                         <Route path="results/groups" element={<GroupResults />} />
                                         <Route path="results/groups/:id" element={<GroupResultShow />} />

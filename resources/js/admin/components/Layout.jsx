@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
-import { Activity, BarChart3, BookOpen, ClipboardList, Cog, Dices, Home, UserCheck, Briefcase, ChevronDown, CircleHelp, FileQuestion, GraduationCap, KeyRound, LayoutDashboard, Layers, LogOut, Menu, Send, Settings, ShieldCheck, User, UserCog, Users } from 'lucide-react';
+import { Activity, BarChart3, BookOpen, ClipboardList, Cog, Dices, Home, UserCheck, Briefcase, ChevronDown, CircleHelp, FileQuestion, GraduationCap, KeyRound, LayoutDashboard, Layers, LogOut, Menu, Send, Settings, ShieldCheck, User, UserCog, Users, Wallet } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { Avatar } from './ui';
 import { cx } from '../lib/utils';
@@ -21,6 +21,7 @@ const STUDY = [
     ['access_test', '/admin/tests', FileQuestion, 'Testlar'],
     ['access_test', '/admin/active-users', Activity, 'Faol foydalanuvchilar'],
     ['access_student', '/admin/students-manage', UserCog, 'O‘quvchilar boshqaruvi'],
+    ['access_student', '/admin/students-finance', Wallet, 'O‘quvchilar moliyasi'],
 ];
 const BASE = [
     ['access_question', '/admin/questions', CircleHelp, 'Savollar'],

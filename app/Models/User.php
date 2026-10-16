@@ -24,6 +24,7 @@ class User extends Authenticatable
         'username',
         'chat_id',
         'max_attempts',
+        'payment',
         'lang',
         'session_id',
         'password',
